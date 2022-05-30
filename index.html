@@ -69,7 +69,6 @@
 
       function createPlayGround( rowsCols ) {
         deleteAllChildElements();
-        // setSizeAndPlayersQount(rowsCols);
         const divArray = [];
         let num = 0;
         for (let i = 0; i < rowsCols; i++) {
@@ -83,16 +82,20 @@
         }
         return divArray
       }
-
+      
       function setPlayersRandomPlace(rowsCols){
         const players = setSizeAndPlayersQount(rowsCols);
-        console.log(players)
+        let playersInfo = [], playerInfo = {};
         const divlist = createPlayGround(rowsCols)
         players.forEach((element) => {
-          // console.log(key)
-          const result = getRandomItem(divlist);
-          result.innerHTML = element;
+          const randomItem = getRandomItem(divlist);
+          if ( randomItem !== undefined ){
+            playerInfo = { [element]: randomItem.id }
+            playersInfo.push(playerInfo);
+            randomItem.innerHTML = element
+          }
         })
+        return playersInfo;
       }
       
       const player = [1, 2];
@@ -143,31 +146,36 @@
         const row = arr[rawIndex];
         const colIndex = Math.floor(Math.random() * row.length);
         const randomItem = row[colIndex];
-        arr.indexOf(randomItem);
-        if (randomItem.childElementCount === 0) {
+        
+        if (randomItem.innerHTML === '' ) {
           return randomItem;
-        } 
+        }else {
+          return getRandomItem(arr)
+        }
       }
-      // const result = getRandomItem(divList);
-      // result.appendChild(rabbit);
-      // if (result.childElementCount !== 0) {
-      //     console.log('barev');
-      //   }
+      
       // console.log(result.id);
       //   const result = getIndexOfValue(divList, 24);
       //   console.log(result[0], result[1]);
-
 
       function addStartButtonEvent(){
         const startBtn = document.getElementById('start');
         startBtn.onclick = function () { 
           const select = document.getElementById("size");
           const sizeValue = select.value;
-          setPlayersRandomPlace(sizeValue)
+          const playersList = setPlayersRandomPlace(sizeValue)
         };
       }
-
+      
       addStartButtonEvent()
+      
+      window.onkeydown = function(event){
+        
+        if( event.key === 'ArrowUp' ) {
+          console.log('barev')
+        }
+      };
+      
     </script>
   </body>
 </html>
