@@ -1,191 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game</title>
     <style>
-      .body {
-        background-color: rgb(135, 94, 218);
-        width: 100%;
-        padding: 20px 0 100px 0;
-      }
-      .container {
-        border: 1px solid black;
-        background-color: rgb(35, 144, 122);
-        margin: 0 auto;
-        width: 500px;
-        height: 20px;
-      }
-      .container div {
-        border: 1px solid black;
-        width: 70px;
-        height: 70px;
-        float: left;
-        margin: 2px;
-        background-color: rgb(155, 205, 195);
-      }
-      .buttons{
-        width: 500px;
-        height: 90px;
-        margin: 0 auto;
-        text-align: center;
-      }
-      img {
-        width: 70px;
-        height: 70px;
-      }
-      button, select {
-        padding: 7px;
-        margin-right: 20px;
-        border-radius: 10px;
-        background-color: rgb(35, 144, 122);
-        color:white;
-        font-size: 15px;
-      }
-      h3 {
-        color:white;
-      }
+        .body {
+            background-color: rgb(135, 94, 218);
+            width: 100%;
+            padding: 20px 0 100px 0;
+        }
+        .container {
+            border: 1px solid black;
+            background-color: rgb(35, 144, 122);
+            margin: 0 auto;
+            width: 500px;
+            height: 20px;
+    
+        }
+        .container div {
+            border: 1px solid black;
+            width: 70px;
+            height: 70px;
+            float: left;
+            margin: 2px;
+            background-color: rgb(155, 205, 195);
+        }
+        .buttons {
+            width: 500px;
+            height: 90px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        img {
+            width: 70px;
+            height: 70px;
+        }
+        button,
+        select {
+            padding: 7px;
+            margin-right: 20px;
+            border-radius: 10px;
+            background-color: rgb(35, 144, 122);
+            color: white;
+            font-size: 15px;
+        }
+        h3 {
+            color: white;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="body" id="body">
-      <div class="buttons">
-        <h3>HELP THE BUNNY GET HOME</h3>
-        <button id="start">START</button>
-        <select name="size" id="size">
-          <option value="5"> 5 * 5 </option>
-          <option value="7"> 7 * 7 </option>
-          <option value="10"> 10 * 10 </option>
-        </select>
-      </div>
-      <div class="container" id="container"></div>
+        <div class="buttons">
+            <h3>HELP THE BUNNY GET HOME</h3>
+            <button id="start">START</button>
+            <select name="size" id="size">
+                <option value="5"> 5 * 5 </option>
+                <option value="7"> 7 * 7 </option>
+                <option value="10"> 10 * 10 </option>
+            </select>
+        </div>
+        <div class="container" id="container"></div>
     </div>
-
     <script>
-      let rabbit = document.createElement("img");
-      rabbit.src = "Images/rabbit.png";
-      let wolf = document.createElement("img");
-      wolf.src = "Images/wolf.png";
-      let house = document.createElement("img");
-      house.src = "Images/house.png";
-      let fence = document.createElement("img");
-      fence.src = "Images/fence.png";
+        const rabbitNum = 1;
+        const houseNum = 2;
+        const wolfNum = 3;
+        const fenceNum = 4;
 
-      const block = document.getElementById("container");
+        function addStartButtonEvent() {
+            const startBtn = document.getElementById('start');
+            startBtn.onclick = function () {
+                const select = document.getElementById("size");
+                const sizeValue = select.value;
+                let primaryArray = drawPrimaryArray(sizeValue)
+                const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
+                console.log(newMultiArr)
 
-      function createPlayGround( rowsCols ) {
-        deleteAllChildElements();
-        const divArray = [];
-        let num = 0;
-        for (let i = 0; i < rowsCols; i++) {
-          divArray[i] = [];
-          for (let j = 0; j < rowsCols; j++) {
-            const div = document.createElement("div");
-            div.setAttribute("id", (num += 1));
-            divArray[i][j] = div;
-            block.appendChild(div);
-          }
+            };
         }
-        return divArray
-      }
-      
-      function setPlayersRandomPlace(rowsCols){
-        const players = setSizeAndPlayersQount(rowsCols);
-        let playersInfo = [], playerInfo = {};
-        const divlist = createPlayGround(rowsCols)
-        players.forEach((element) => {
-          const randomItem = getRandomItem(divlist);
-          if ( randomItem !== undefined ){
-            playerInfo = { [element]: randomItem.id }
-            playersInfo.push(playerInfo);
-            randomItem.innerHTML = element
-          }
-        })
-        console.log(divlist)
-        return playersInfo;
-      }
-      
-      const player = [1, 2];
-      function setSizeAndPlayersQount( size ) {
-        let pix, wcount, fcount = ''
-
-        if ( size === '5' ) {
-          pix = "380px"
-          wcount = 3
-          fcount = 2
+        function createMultidimensionalArray(blockSize){
+            const multiArray = [];
+            for (let i = 0; i < blockSize; i++) {
+                multiArray[i] = [];
+                for (let j = 0; j < blockSize; j++) {
+                    multiArray[i][j] = 0;
+                }
+            }
+            return multiArray;
         }
-        if (size === '7' ) {
-          pix = "532px"
-          wcount = 5
-          fcount = 3
-        }
-        if (size === '10' ) {
-          pix = "760px"
-          wcount = 6
-          fcount = 4
-        }
-        block.style.width = pix;
-        block.style.height = pix;
 
-        const wolfs = Array(wcount).fill(3)
-        const fences = Array(fcount).fill(4)
-        const players = player.concat( wolfs, fences);
-        return players;
-      }
-
-      function deleteAllChildElements() {
-        while (block.lastElementChild) {
-          block.removeChild(block.lastElementChild);
+        function setPlayersLocation(multiArr, sizeVal) {
+            const rabbitOut = setRabbitLocation(multiArr)
+            const houseOut = setHouseLocation(rabbitOut)
+            for(let i = 0; i < (sizeVal/100*60); i++){
+                let wolfOut = setWolfLocation(houseOut)
+                return wolfOut
+            }
+            for (let i = 0; i < (sizeVal / 100 * 40); i++) {
+                const fenceOut = setFenceLocation(wolfOut)
+            }
+            return multiArr;
         }
-      }
 
-      function getIndexOfValue(arr, value) {
-        for (var i = 0; i < arr.length; i++) {
-          var index = arr[i].indexOf(value);
-          if (index > -1) {
-            return [i, index];
-          }
+        function setRabbitLocation(multiArr) {
+            const [x, y] = getRandomLoc(multiArr);
+            multiArr[x][y] = rabbitNum
+            return multiArr;
+            
         }
-      }
+        function setHouseLocation(multiArr) {
+            const [x, y] = getRandomLoc(multiArr);
+            multiArr[x][y] = houseNum
+            return multiArr;
+        }
+        function setWolfLocation(multiArr) {
+            const [x, y] = getRandomLoc(multiArr);
+            multiArr[x][y] = wolfNum
+            return multiArr;
+        }
+        function setFenceLocation(multiArr) {
+            const [x, y] = getRandomLoc(multiArr);
+            multiArr[x][y] = fenceNum
+            return multiArr;
+        }
 
-      function getRandomItem( arr ) {
-        const rawIndex = Math.floor(Math.random() * arr.length);
-        const row = arr[rawIndex];
-        const colIndex = Math.floor(Math.random() * row.length);
-        const randomItem = row[colIndex];
+        function getRandomLoc(multiArr) {
+            const rawIndex = Math.floor(Math.random() * multiArr.length);
+            const colIndex = Math.floor(Math.random() * multiArr.length);
+            if ( multiArr[rawIndex][colIndex] === 0 ){
+                return [rawIndex, colIndex]
+            }else {
+               return getRandomLoc(multiArr) 
+            }
+            
+        }
+
+        function drawPrimaryArray (sizeValue) {
+            const playersList = createMultidimensionalArray(sizeValue)
+            return playersList;
+        }
         
-        if (randomItem.innerHTML === '' ) {
-          return randomItem;
-        }else {
-          return getRandomItem(arr)
-        }
-      }
-      
-      // console.log(result.id);
-      //   const result = getIndexOfValue(divList, 24);
-      //   console.log(result[0], result[1]);
-
-      function addStartButtonEvent(){
-        const startBtn = document.getElementById('start');
-        startBtn.onclick = function () { 
-          const select = document.getElementById("size");
-          const sizeValue = select.value;
-          const playersList = setPlayersRandomPlace(sizeValue)
-          console.log(playersList)
-        };
-      }
-      
-      addStartButtonEvent()
-      
-      window.onkeydown = function(event){
         
-        if( event.key === 'ArrowUp' ) {
-          console.log('barev')
-        }
-      };
-      
+        addStartButtonEvent()
     </script>
-  </body>
+</body>
 </html>
