@@ -65,66 +65,49 @@
         <div class="container" id="container"></div>
     </div>
     <script>
+        const defaultVal = 0;
         const rabbitNum = 1;
         const houseNum = 2;
         const wolfNum = 3;
         const fenceNum = 4;
-
         function addStartButtonEvent() {
             const startBtn = document.getElementById('start');
             startBtn.onclick = function () {
                 const select = document.getElementById("size");
                 const sizeValue = select.value;
-                let primaryArray = drawPrimaryArray(sizeValue)
+                const primaryArray = drawPrimaryArray(sizeValue)
                 const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
                 console.log(newMultiArr)
-
             };
         }
+       
         function createMultidimensionalArray(blockSize){
             const multiArray = [];
             for (let i = 0; i < blockSize; i++) {
                 multiArray[i] = [];
                 for (let j = 0; j < blockSize; j++) {
-                    multiArray[i][j] = 0;
+                    multiArray[i][j] = defaultVal;
                 }
             }
             return multiArray;
         }
 
         function setPlayersLocation(multiArr, sizeVal) {
-            const rabbitOut = setRabbitLocation(multiArr)
-            const houseOut = setHouseLocation(rabbitOut)
-            for(let i = 0; i < (sizeVal/100*60); i++){
-                let wolfOut = setWolfLocation(houseOut)
-                return wolfOut
+            setCharacterLocation(multiArr, rabbitNum)
+            setCharacterLocation(multiArr, houseNum)
+            for(let i = 0; i < (sizeVal / 100 * 60); i++){
+                setCharacterLocation(multiArr, wolfNum)
             }
             for (let i = 0; i < (sizeVal / 100 * 40); i++) {
-                const fenceOut = setFenceLocation(wolfOut)
+                setCharacterLocation(multiArr, fenceNum)
             }
             return multiArr;
         }
 
-        function setRabbitLocation(multiArr) {
+        function setCharacterLocation(multiArr, value) {
             const [x, y] = getRandomLoc(multiArr);
-            multiArr[x][y] = rabbitNum
-            return multiArr;
-            
-        }
-        function setHouseLocation(multiArr) {
-            const [x, y] = getRandomLoc(multiArr);
-            multiArr[x][y] = houseNum
-            return multiArr;
-        }
-        function setWolfLocation(multiArr) {
-            const [x, y] = getRandomLoc(multiArr);
-            multiArr[x][y] = wolfNum
-            return multiArr;
-        }
-        function setFenceLocation(multiArr) {
-            const [x, y] = getRandomLoc(multiArr);
-            multiArr[x][y] = fenceNum
-            return multiArr;
+            multiArr[x][y] = value
+            return multiArr;   
         }
 
         function getRandomLoc(multiArr) {
@@ -143,6 +126,9 @@
             return playersList;
         }
         
+        function moveRabbit(location, action) {
+
+        }
         
         addStartButtonEvent()
     </script>
