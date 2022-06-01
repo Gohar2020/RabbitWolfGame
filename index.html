@@ -70,6 +70,7 @@
         const houseNum = 2;
         const wolfNum = 3;
         const fenceNum = 4;
+        
         function addStartButtonEvent() {
             const startBtn = document.getElementById('start');
             startBtn.onclick = function () {
@@ -78,9 +79,34 @@
                 const primaryArray = drawPrimaryArray(sizeValue)
                 const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
                 console.log(newMultiArr)
+                
+                addRabbitMovementEventListeners(newMultiArr)
+                // moveWolf(newMultiArr)
+                
             };
+
+            function addRabbitMovementEventListeners(multiArr) {
+                document.addEventListener("keydown", function(event) {
+
+                    let actionVal = []
+                    if(event.key === 'ArrowUp'){
+                        actionVal = [-1, 0]
+                    }
+                    if(event.key === 'ArrowDown'){
+                        actionVal = [1, 0]
+                    }
+                    if(event.key === 'ArrowRight'){
+                        actionVal = [0, 1]
+                    }
+                    if (event.key === 'ArrowLeft') {
+                        actionVal = [0, -1]
+                    }
+                    const newArr = moveRabbit(multiArr, actionVal)
+                    console.log(newArr);
+                })
+            }
         }
-       
+        
         function createMultidimensionalArray(blockSize){
             const multiArray = [];
             for (let i = 0; i < blockSize; i++) {
@@ -126,8 +152,48 @@
             return playersList;
         }
         
-        function moveRabbit(location, action) {
+        function moveRabbit(multiArr, action) {
+            const locationList = getIndexOfCurrentCharacter(multiArr, rabbitNum)
+            locationList.forEach(item => {
+                const [a, b] = item
+                const [c, d] = action
+                const step = multiArr.length - 1
+                let x = '', y = '';
+                if (c === -1 && a === 0) {
+                    [x, y] = [a + step, b + d]
+                }else if (c === 1 && a === step) {
+                    [x, y] = [a - step, b + d]
+                }else if (d === 1 && b === step) {
+                    [x, y] = [a + c, b - step]
+                }else if (d === -1 && b === 0) {
+                    [x, y] = [a + c, b + step]
+                }else {
+                    [x, y] = [a + c, b + d]
+                }
+                if ( multiArr[x][y] === 0 ) {
+                    multiArr[a][b] = defaultVal
+                    multiArr[x][y] = rabbitNum
+                }   
+            })
+            return multiArr;    
+        }
 
+        function moveWolf(array){
+            const locationList = getIndexOfCurrentCharacter( array, wolfNum )
+            console.log( locationList )
+
+        }
+        
+        function getIndexOfCurrentCharacter(array, charValue) {
+            const findInArray = function (accumulator, row, x) {
+                row.forEach((element, y) => {
+                    if ( element === charValue ) {
+                        accumulator.push([x, y])
+                    }
+                })
+                return accumulator
+            }
+            return array.reduce(findInArray, [])
         }
         
         addStartButtonEvent()
