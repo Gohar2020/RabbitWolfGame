@@ -80,9 +80,7 @@
                 const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
                 console.log(newMultiArr)
                 
-                addRabbitMovementEventListeners(newMultiArr)
-                // moveWolf(newMultiArr)
-                
+                addRabbitMovementEventListeners(newMultiArr)    
             };
 
             function addRabbitMovementEventListeners(multiArr) {
@@ -101,8 +99,9 @@
                     if (event.key === 'ArrowLeft') {
                         actionVal = [0, -1]
                     }
-                    const newArr = moveRabbit(multiArr, actionVal)
-                    console.log(newArr);
+                    const multiArrAfterRabbitMovement = moveRabbit(multiArr, actionVal)
+                    const multiArrAfterWolfMovement = moveWolf(multiArr)
+                    console.log(multiArrAfterWolfMovement);   
                 })
             }
         }
@@ -173,17 +172,59 @@
                 if ( multiArr[x][y] === 0 ) {
                     multiArr[a][b] = defaultVal
                     multiArr[x][y] = rabbitNum
+                }else if ( multiArr[x][y] === houseNum ){
+                    alert("CONGRATULATIONS..YOU WON !!!");
                 }   
             })
             return multiArr;    
         }
 
-        function moveWolf(array){
-            const locationList = getIndexOfCurrentCharacter( array, wolfNum )
-            console.log( locationList )
-
+        function moveWolf(multiArr){
+            const rabbitLocList = getIndexOfCurrentCharacter( multiArr, rabbitNum )
+            const wolfLocList = getIndexOfCurrentCharacter( multiArr, wolfNum )
+            const [x, y] = rabbitLocList[0]
+            wolfLocList.forEach(elem => {
+                const steps = findWolfsSteps(multiArr, elem)
+                let distances = []
+                if( steps.length !== 0 ) {
+                    steps.forEach(elem => {
+                        distances.push(calculateDistance([x, y], elem))   
+                    })
+                    const index = distances.indexOf(Math.min(...distances));
+                    const nearPoint = steps[index]
+                    multiArr[nearPoint[0]][nearPoint[1]] = wolfNum
+                    multiArr[elem[0]][elem[1]] = defaultVal
+                    console.log(distances)
+                    console.log(index)
+                    console.log(nearPoint)
+                }   
+            })
+            return multiArr;
         }
         
+        function calculateDistance(location1, location2){
+            return Math.sqrt(Math.pow((location1[0] - location2[0]), 2) + 
+                            Math.pow((location1[1] - location2[1]), 2 ))
+        }
+
+        function findWolfsSteps( multiArr, location ) {
+            const [x, y] = location
+            const up = [x-1, y]
+            const down = [x+1, y]
+            const right = [x, y+1]
+            const left = [x, y-1]
+            let steps = [up, down, right, left]
+            steps = steps.filter( item => item[0] >= 0 && item[0] < multiArr.length && 
+                                        item[1] >= 0 && item[1] < multiArr.length && 
+                                        multiArr[item[0]][item[1]] === 0 )
+            return steps
+        }
+        function setStepsArray (loc){
+            let stepsArray = []
+            if(loc !== undefined) {
+                stepsArray.push(loc)
+            }
+        }
         function getIndexOfCurrentCharacter(array, charValue) {
             const findInArray = function (accumulator, row, x) {
                 row.forEach((element, y) => {
