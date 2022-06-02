@@ -65,21 +65,36 @@
         <div class="container" id="container"></div>
     </div>
     <script>
-        const defaultVal = 0;
-        const rabbitNum = 1;
-        const houseNum = 2;
-        const wolfNum = 3;
-        const fenceNum = 4;
+        const FREE_ID = 0;
+        const RABBIT_ID = 1;
+        const HOUSE_ID = 2;
+        const WOLF_ID = 3;
+        const FENCE_ID = 4;
+        const X = 0;
+        const Y = 1;
+        const UNIT_SIZE = 76;
+
+        const rabbit = document.createElement("img");
+        rabbit.src = "Images/rabbit.png";
+        const wolf = document.createElement("img");
+        wolf.src = "Images/wolf.png";
+        const house = document.createElement("img");
+        house.src = "Images/house.png";
+        const fence = document.createElement("img");
+        fence.src = "Images/fence.png";
+
+        const block = document.getElementById("container");
         
         function addStartButtonEvent() {
             const startBtn = document.getElementById('start');
             startBtn.onclick = function () {
                 const select = document.getElementById("size");
                 const sizeValue = select.value;
+                setSizeOfGameGrid(sizeValue)
                 const primaryArray = drawPrimaryArray(sizeValue)
                 const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
                 console.log(newMultiArr)
-                
+                createPlayGround(newMultiArr)
                 addRabbitMovementEventListeners(newMultiArr)    
             };
 
@@ -100,50 +115,45 @@
                         actionVal = [0, -1]
                     }
                     const multiArrAfterRabbitMovement = moveRabbit(multiArr, actionVal)
-                    const multiArrAfterWolfMovement = moveWolf(multiArr)
+                    const multiArrAfterWolfMovement = moveWolfs(multiArrAfterRabbitMovement)
                     console.log(multiArrAfterWolfMovement);
-                    findRabbitNeighbors(multiArrAfterWolfMovement)
-                    // delayedAlert(multiArrAfterWolfMovement)  
+                    createPlayGround(multiArrAfterWolfMovement)
                 })
             }
-        }
-        function delayedAlert(multiArr) {
-            let timeoutID
-            timeoutID = window.setTimeout(findRabbitNeighbors(multiArr) , 3000);
         }
         function createMultidimensionalArray(blockSize){
             const multiArray = [];
             for (let i = 0; i < blockSize; i++) {
                 multiArray[i] = [];
                 for (let j = 0; j < blockSize; j++) {
-                    multiArray[i][j] = defaultVal;
+                    multiArray[i][j] = FREE_ID;
                 }
             }
             return multiArray;
         }
 
         function setPlayersLocation(multiArr, sizeVal) {
-            setCharacterLocation(multiArr, rabbitNum)
-            setCharacterLocation(multiArr, houseNum)
+            setCharacterLocation(multiArr, RABBIT_ID)
+            setCharacterLocation(multiArr, HOUSE_ID)
             for(let i = 0; i < (sizeVal / 100 * 60); i++){
-                setCharacterLocation(multiArr, wolfNum)
+                setCharacterLocation(multiArr, WOLF_ID)
             }
             for (let i = 0; i < (sizeVal / 100 * 40); i++) {
-                setCharacterLocation(multiArr, fenceNum)
+                setCharacterLocation(multiArr, FENCE_ID)
             }
             return multiArr;
         }
 
-        function setCharacterLocation(multiArr, value) {
+        function setCharacterLocation(multiArr, locValue) {
             const [x, y] = getRandomLoc(multiArr);
-            multiArr[x][y] = value
+            multiArr[x][y] = locValue
             return multiArr;   
         }
 
         function getRandomLoc(multiArr) {
             const rawIndex = Math.floor(Math.random() * multiArr.length);
             const colIndex = Math.floor(Math.random() * multiArr.length);
-            if ( multiArr[rawIndex][colIndex] === 0 ){
+            if ( multiArr[rawIndex][colIndex] === FREE_ID ){
                 return [rawIndex, colIndex]
             }else {
                return getRandomLoc(multiArr) 
@@ -157,7 +167,7 @@
         }
         
         function moveRabbit(multiArr, action) {
-            const locationList = getIndexOfCurrentCharacter(multiArr, rabbitNum)
+            const locationList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
             locationList.forEach(item => {
                 const [a, b] = item
                 const [c, d] = action
@@ -175,9 +185,9 @@
                     [x, y] = [a + c, b + d]
                 }
                 if ( multiArr[x][y] === 0 ) {
-                    multiArr[a][b] = defaultVal
-                    multiArr[x][y] = rabbitNum
-                }else if ( multiArr[x][y] === houseNum ){
+                    multiArr[a][b] = FREE_ID
+                    multiArr[x][y] = RABBIT_ID
+                }else if ( multiArr[x][y] === HOUSE_ID ){
                     alert("CONGRATULATIONS..YOU WON !!!");
                     
                 }  
@@ -185,41 +195,28 @@
             return multiArr;    
         }
 
-        function moveWolf(multiArr){
-            const rabbitLocList = getIndexOfCurrentCharacter( multiArr, rabbitNum )
-            const wolfLocList = getIndexOfCurrentCharacter( multiArr, wolfNum )
-            const [x, y] = rabbitLocList[0]
-            wolfLocList.forEach( elem => {
-                const steps = findWolfsSteps(multiArr, elem)
-                let distances = []
-                if( steps.length !== 0 ) {
-                    steps.forEach(elem => {
-                        distances.push(calculateDistance([x, y], elem))   
-                    })
+        function moveWolfs(multiArr){
+            const rabbitLocList = getIndexOfCurrentCharacter( multiArr, RABBIT_ID )
+            const wolfLocList = getIndexOfCurrentCharacter( multiArr, WOLF_ID )
+            const rabbitCoord = rabbitLocList[X]
+
+            const moveWolf = wolf => {
+                const steps = findWolfsSteps(multiArr, wolf)
+                if( steps !== undefined ) {
+                    const distances = steps.map(step => calculateDistance( rabbitCoord, step ))
                     const index = distances.indexOf(Math.min(...distances));
                     const nearPoint = steps[index]
-                    multiArr[nearPoint[0]][nearPoint[1]] = wolfNum
-                    multiArr[elem[0]][elem[1]] = defaultVal
+                    multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
+                    multiArr[wolf[X]][wolf[Y]] = FREE_ID
                 }
-            })
+            }
+            wolfLocList.forEach(moveWolf)
             return multiArr;
         }
         
-        function findRabbitNeighbors(multiArr) {
-            const rabbitLocList = getIndexOfCurrentCharacter(multiArr, rabbitNum)
-            const [x, y] = rabbitLocList[0]
-            let steps = [[x - 1, y], [x + 1, y], [x, y + 1], [x, y - 1]]
-            steps = steps.filter(item => item[0] >= 0 && item[0] < multiArr.length &&
-                                        item[1] >= 0 && item[1] < multiArr.length &&
-                                        multiArr[item[0]][item[1]] === wolfNum)
-            if ( steps.length !== 0 ) {
-                alert("UPSSS..YOU LOST !!!");
-            }
-        }
-        
         function calculateDistance(location1, location2){
-            return Math.sqrt(Math.pow((location1[0] - location2[0]), 2) + 
-                            Math.pow((location1[1] - location2[1]), 2 ))
+            return Math.sqrt(Math.pow((location1[X] - location2[X]), 2) + 
+                            Math.pow((location1[Y] - location2[Y]), 2 ))
         }
 
         function findWolfsSteps( multiArr, location ) {
@@ -229,12 +226,18 @@
             const right = [x, y+1]
             const left = [x, y-1]
             let steps = [up, down, right, left]
-            steps = steps.filter( item => item[0] >= 0 && item[0] < multiArr.length && 
-                                        item[1] >= 0 && item[1] < multiArr.length && 
-                                        multiArr[item[0]][item[1]] === defaultVal )
-            return steps
+            steps = steps.filter(step => step[X] >= 0 && step[X] < multiArr.length &&
+                                        step[Y] >= 0 && step[Y] < multiArr.length)
+            const findRebbitNearWolf = steps.filter(step => multiArr[step[X]][step[Y]] === RABBIT_ID)
+            if (findRebbitNearWolf.length !== 0) {
+                multiArr[findRebbitNearWolf[X][X]][findRebbitNearWolf[X][Y]] = WOLF_ID
+                multiArr[x][y] = FREE_ID
+                setTimeout(function () { alert("UPSSS..YOU LOST !!!") }, 1000);
+            }else {
+                return steps.filter( step => multiArr[step[X]][step[Y]] === FREE_ID )
+            }   
         }
- 
+
         function getIndexOfCurrentCharacter(array, charValue) {
             const findInArray = function (accumulator, row, x) {
                 row.forEach((element, y) => {
@@ -247,6 +250,45 @@
             return array.reduce(findInArray, [])
         }
         
+        function setSizeOfGameGrid(size) {
+            const blocksize = UNIT_SIZE * size + 'px'
+            block.style.width = blocksize;
+            block.style.height = blocksize;
+        }
+        function createPlayGround(multiArr) {
+            deleteAllChildElements();
+            const divArray = [];
+            for (let i = 0; i < multiArr.length; i++) {
+                
+                divArray[i] = [];
+                for (let j = 0; j < multiArr.length; j++) {
+                    let div = document.createElement("div");
+                    let value = ''
+                    block.appendChild(div);
+                    if (multiArr[i][j] === FREE_ID) {
+                       value = div
+                    } if (multiArr[i][j] === RABBIT_ID) {
+                        value = div.appendChild(rabbit);
+                    } else if (multiArr[i][j] === HOUSE_ID) {
+                        value = div.appendChild(house);
+                    } else if (multiArr[i][j] === WOLF_ID) {
+                        value = div.appendChild(wolf);
+                    } else if (multiArr[i][j] === FENCE_ID) {
+                        value = div.appendChild(fence);
+                    }
+                    divArray[i][j] = value;
+                    
+                    console.log(value)
+                }
+            }
+        }
+
+        function deleteAllChildElements() {
+            while (block.lastElementChild) {
+                block.removeChild(block.lastElementChild);
+            }
+        } 
+
         addStartButtonEvent()
     </script>
 </body>
