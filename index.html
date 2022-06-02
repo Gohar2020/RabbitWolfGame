@@ -101,11 +101,16 @@
                     }
                     const multiArrAfterRabbitMovement = moveRabbit(multiArr, actionVal)
                     const multiArrAfterWolfMovement = moveWolf(multiArr)
-                    console.log(multiArrAfterWolfMovement);   
+                    console.log(multiArrAfterWolfMovement);
+                    findRabbitNeighbors(multiArrAfterWolfMovement)
+                    // delayedAlert(multiArrAfterWolfMovement)  
                 })
             }
         }
-        
+        function delayedAlert(multiArr) {
+            let timeoutID
+            timeoutID = window.setTimeout(findRabbitNeighbors(multiArr) , 3000);
+        }
         function createMultidimensionalArray(blockSize){
             const multiArray = [];
             for (let i = 0; i < blockSize; i++) {
@@ -174,7 +179,8 @@
                     multiArr[x][y] = rabbitNum
                 }else if ( multiArr[x][y] === houseNum ){
                     alert("CONGRATULATIONS..YOU WON !!!");
-                }   
+                    
+                }  
             })
             return multiArr;    
         }
@@ -183,7 +189,7 @@
             const rabbitLocList = getIndexOfCurrentCharacter( multiArr, rabbitNum )
             const wolfLocList = getIndexOfCurrentCharacter( multiArr, wolfNum )
             const [x, y] = rabbitLocList[0]
-            wolfLocList.forEach(elem => {
+            wolfLocList.forEach( elem => {
                 const steps = findWolfsSteps(multiArr, elem)
                 let distances = []
                 if( steps.length !== 0 ) {
@@ -194,12 +200,21 @@
                     const nearPoint = steps[index]
                     multiArr[nearPoint[0]][nearPoint[1]] = wolfNum
                     multiArr[elem[0]][elem[1]] = defaultVal
-                    console.log(distances)
-                    console.log(index)
-                    console.log(nearPoint)
-                }   
+                }
             })
             return multiArr;
+        }
+        
+        function findRabbitNeighbors(multiArr) {
+            const rabbitLocList = getIndexOfCurrentCharacter(multiArr, rabbitNum)
+            const [x, y] = rabbitLocList[0]
+            let steps = [[x - 1, y], [x + 1, y], [x, y + 1], [x, y - 1]]
+            steps = steps.filter(item => item[0] >= 0 && item[0] < multiArr.length &&
+                                        item[1] >= 0 && item[1] < multiArr.length &&
+                                        multiArr[item[0]][item[1]] === wolfNum)
+            if ( steps.length !== 0 ) {
+                alert("UPSSS..YOU LOST !!!");
+            }
         }
         
         function calculateDistance(location1, location2){
@@ -216,15 +231,10 @@
             let steps = [up, down, right, left]
             steps = steps.filter( item => item[0] >= 0 && item[0] < multiArr.length && 
                                         item[1] >= 0 && item[1] < multiArr.length && 
-                                        multiArr[item[0]][item[1]] === 0 )
+                                        multiArr[item[0]][item[1]] === defaultVal )
             return steps
         }
-        function setStepsArray (loc){
-            let stepsArray = []
-            if(loc !== undefined) {
-                stepsArray.push(loc)
-            }
-        }
+ 
         function getIndexOfCurrentCharacter(array, charValue) {
             const findInArray = function (accumulator, row, x) {
                 row.forEach((element, y) => {
