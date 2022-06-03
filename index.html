@@ -71,7 +71,6 @@
             background-color: rgba(255, 255, 255, 0.7); 
         }
         .alert button {
-            /* position: absolute; */
             bottom: 1px;
         }
         #message {
@@ -86,7 +85,7 @@
     <div class="body" id="body">
         <div class="buttons">
             <h3>HELP THE BUNNY GET HOME</h3>
-            <button id="start">START</button>
+            <button id="start" onclick="onClickStartButton()">START</button>
             <select name="size" id="size">
                 <option value="5"> 5 * 5 </option>
                 <option value="7"> 7 * 7 </option>
@@ -99,7 +98,7 @@
         <div class="alert">
             <p id="message"></p>
             <br />
-            <button>START AGAIN</button>
+            <button onclick="onClickStartButton()">START AGAIN</button>
         </div>
     </div>
     <script>
@@ -112,24 +111,19 @@
         const Y = 1;
         const UNIT_SIZE = 76;
         
-        function addStartButtonEvent() {
-            const startBtn = document.getElementById('start');
-            startBtn.onclick = function () {
-                onClickStartButton()  
-            };
-        }
         function onClickStartButton(){
             const select = document.getElementById("size");
             const sizeValue = select.value;
             setSizeOfGameGrid(sizeValue)
             const primaryArray = drawPrimaryArray(sizeValue)
-            let newMultiArr = setPlayersLocation(primaryArray, sizeValue)
+            const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
             console.log(newMultiArr)
             createPlayGround(newMultiArr)
             addRabbitMovementEventListeners(newMultiArr)
+
         }
         function addRabbitMovementEventListeners(multiArr) {
-            document.addEventListener("keydown", function(event) {
+            window.onkeydown = (event => {
 
                 let actionVal = []
                 if(event.key === 'ArrowUp'){
@@ -148,8 +142,6 @@
                 let multiArrAfterWolfMovement = moveWolfs(multiArrAfterRabbitMovement)
                 console.log(multiArrAfterWolfMovement);
                 createPlayGround(multiArrAfterWolfMovement)
-                multiArrAfterRabbitMovement = []
-                multiArrAfterWolfMovement = []
             })
         }
         function createMultidimensionalArray(blockSize){
@@ -162,7 +154,6 @@
             }
             return multiArray;
         }
-
         function setPlayersLocation(multiArr, sizeVal) {
             setCharacterLocation(multiArr, RABBIT_ID)
             setCharacterLocation(multiArr, HOUSE_ID)
@@ -174,13 +165,11 @@
             }
             return multiArr;
         }
-
         function setCharacterLocation(multiArr, locValue) {
             const [x, y] = getRandomLoc(multiArr);
             multiArr[x][y] = locValue
             return multiArr;   
         }
-
         function getRandomLoc(multiArr) {
             const rawIndex = Math.floor(Math.random() * multiArr.length);
             const colIndex = Math.floor(Math.random() * multiArr.length);
@@ -191,12 +180,10 @@
             }
             
         }
-
         function drawPrimaryArray (sizeValue) {
             const playersList = createMultidimensionalArray(sizeValue)
             return playersList;
         }
-        
         function moveRabbit(multiArr, action) {
             const locationList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
             locationList.forEach(item => {
@@ -226,7 +213,6 @@
             })
             return multiArr;    
         }
-
         function moveWolfs(multiArr){
             const rabbitLocList = getIndexOfCurrentCharacter( multiArr, RABBIT_ID )
             const wolfLocList = getIndexOfCurrentCharacter( multiArr, WOLF_ID )
@@ -238,24 +224,19 @@
                     const distances = steps.map(step => calculateDistance( rabbitCoord, step ))
                     const index = distances.indexOf(Math.min(...distances));
                     const nearPoint = steps[index]
-                    // if(nearPoint !== undefined){
-                        multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
-                        multiArr[wolf[X]][wolf[Y]] = FREE_ID
-                    // } 
+                    multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
+                    multiArr[wolf[X]][wolf[Y]] = FREE_ID
                 }
             }
             wolfLocList.forEach(moveWolf)
             return multiArr;
         }
-        
         function calculateDistance(location1, location2){
             if(location1 !== undefined && location1 !== undefined){
                 return Math.sqrt(Math.pow((location1[X] - location2[X]), 2) + 
                             Math.pow((location1[Y] - location2[Y]), 2 ))
-            }
-            
+            }   
         }
-
         function findWolfsSteps( multiArr, location ) {
             const [x, y] = location
             const up = [x-1, y]
@@ -275,7 +256,6 @@
                 return steps.filter( step => multiArr[step[X]][step[Y]] === FREE_ID )
             }   
         }
-
         function getIndexOfCurrentCharacter(array, charValue) {
             const findInArray = function (accumulator, row, x) {
                 row.forEach((element, y) => {
@@ -287,7 +267,6 @@
             }
             return array.reduce(findInArray, [])
         }
-        
         function setSizeOfGameGrid(size) {
             const block = document.getElementById("container");
             const blocksize = UNIT_SIZE * size + 'px'
@@ -305,7 +284,6 @@
                     let div = document.createElement("div");
                     let value = ''
                     block.appendChild(div);
-                    // const characters = [FREE_ID, RABBIT_ID, HOUSE_ID, WOLF_ID, FENCE_ID]
                     if (multiArr[i][j] === FREE_ID) {
                        value = div
                     } if (multiArr[i][j] === RABBIT_ID) {
@@ -339,9 +317,7 @@
         document.querySelector('.alert').style.backgroundSize = "500px 500px"; 
         document.querySelector('.alert button').addEventListener('click', function () {
             document.querySelector('.overlay').style.display = 'none';
-            onClickStartButton() 
         }, false);
-        addStartButtonEvent()
     </script>
 </body>
 </html>
