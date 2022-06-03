@@ -206,6 +206,7 @@
                     multiArr[a][b] = FREE_ID
                     multiArr[x][y] = RABBIT_ID
                 }else if ( multiArr[x][y] === HOUSE_ID ){
+                    multiArr[a][b] = FREE_ID
                     document.querySelector('.overlay').style.display = 'block';
                     document.querySelector('.alert').style.backgroundImage = "url('Images/balloons.png')";
                     document.getElementById('message').innerHTML = '"CONGRATULATIONS..YOU WON !!!"';   
