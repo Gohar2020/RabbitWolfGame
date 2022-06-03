@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game</title>
+    <title>Rabbit-Wolf Game</title>
     <style>
         .body {
             background-color: rgb(135, 94, 218);
@@ -49,6 +49,37 @@
         h3 {
             color: white;
         }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+        }
+        .alert {
+            position: fixed;
+            top: 10%;
+            margin-top: -50px;
+            left: 41%;
+            margin-left: -100px;
+            width: 500px;
+            height: 500px;
+            text-align: center;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.7); 
+        }
+        .alert button {
+            /* position: absolute; */
+            bottom: 1px;
+        }
+        #message {
+            padding-top: 40px;
+            padding-bottom: 180px;
+            font-size: 40px;
+            color: rgb(204, 34, 8);
+        }
     </style>
 </head>
 <body>
@@ -64,6 +95,13 @@
         </div>
         <div class="container" id="container"></div>
     </div>
+    <div class="overlay">
+        <div class="alert">
+            <p id="message"></p>
+            <br />
+            <button>START AGAIN</button>
+        </div>
+    </div>
     <script>
         const FREE_ID = 0;
         const RABBIT_ID = 1;
@@ -73,53 +111,46 @@
         const X = 0;
         const Y = 1;
         const UNIT_SIZE = 76;
-
-        const rabbit = document.createElement("img");
-        rabbit.src = "Images/rabbit.png";
-        const wolf = document.createElement("img");
-        wolf.src = "Images/wolf.png";
-        const house = document.createElement("img");
-        house.src = "Images/house.png";
-        const fence = document.createElement("img");
-        fence.src = "Images/fence.png";
-
-        const block = document.getElementById("container");
         
         function addStartButtonEvent() {
             const startBtn = document.getElementById('start');
             startBtn.onclick = function () {
-                const select = document.getElementById("size");
-                const sizeValue = select.value;
-                setSizeOfGameGrid(sizeValue)
-                const primaryArray = drawPrimaryArray(sizeValue)
-                const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
-                console.log(newMultiArr)
-                createPlayGround(newMultiArr)
-                addRabbitMovementEventListeners(newMultiArr)    
+                onClickStartButton()  
             };
+        }
+        function onClickStartButton(){
+            const select = document.getElementById("size");
+            const sizeValue = select.value;
+            setSizeOfGameGrid(sizeValue)
+            const primaryArray = drawPrimaryArray(sizeValue)
+            let newMultiArr = setPlayersLocation(primaryArray, sizeValue)
+            console.log(newMultiArr)
+            createPlayGround(newMultiArr)
+            addRabbitMovementEventListeners(newMultiArr)
+        }
+        function addRabbitMovementEventListeners(multiArr) {
+            document.addEventListener("keydown", function(event) {
 
-            function addRabbitMovementEventListeners(multiArr) {
-                document.addEventListener("keydown", function(event) {
-
-                    let actionVal = []
-                    if(event.key === 'ArrowUp'){
-                        actionVal = [-1, 0]
-                    }
-                    if(event.key === 'ArrowDown'){
-                        actionVal = [1, 0]
-                    }
-                    if(event.key === 'ArrowRight'){
-                        actionVal = [0, 1]
-                    }
-                    if (event.key === 'ArrowLeft') {
-                        actionVal = [0, -1]
-                    }
-                    const multiArrAfterRabbitMovement = moveRabbit(multiArr, actionVal)
-                    const multiArrAfterWolfMovement = moveWolfs(multiArrAfterRabbitMovement)
-                    console.log(multiArrAfterWolfMovement);
-                    createPlayGround(multiArrAfterWolfMovement)
-                })
-            }
+                let actionVal = []
+                if(event.key === 'ArrowUp'){
+                    actionVal = [-1, 0]
+                }
+                if(event.key === 'ArrowDown'){
+                    actionVal = [1, 0]
+                }
+                if(event.key === 'ArrowRight'){
+                    actionVal = [0, 1]
+                }
+                if (event.key === 'ArrowLeft') {
+                    actionVal = [0, -1]
+                }
+                let multiArrAfterRabbitMovement = moveRabbit(multiArr, actionVal)
+                let multiArrAfterWolfMovement = moveWolfs(multiArrAfterRabbitMovement)
+                console.log(multiArrAfterWolfMovement);
+                createPlayGround(multiArrAfterWolfMovement)
+                multiArrAfterRabbitMovement = []
+                multiArrAfterWolfMovement = []
+            })
         }
         function createMultidimensionalArray(blockSize){
             const multiArray = [];
@@ -188,8 +219,9 @@
                     multiArr[a][b] = FREE_ID
                     multiArr[x][y] = RABBIT_ID
                 }else if ( multiArr[x][y] === HOUSE_ID ){
-                    alert("CONGRATULATIONS..YOU WON !!!");
-                    
+                    document.querySelector('.overlay').style.display = 'block';
+                    document.querySelector('.alert').style.backgroundImage = "url('Images/balloons.png')";
+                    document.getElementById('message').innerHTML = '"CONGRATULATIONS..YOU WON !!!"';   
                 }  
             })
             return multiArr;    
@@ -202,12 +234,14 @@
 
             const moveWolf = wolf => {
                 const steps = findWolfsSteps(multiArr, wolf)
-                if( steps !== undefined ) {
+                if( steps !== undefined) {
                     const distances = steps.map(step => calculateDistance( rabbitCoord, step ))
                     const index = distances.indexOf(Math.min(...distances));
                     const nearPoint = steps[index]
-                    multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
-                    multiArr[wolf[X]][wolf[Y]] = FREE_ID
+                    // if(nearPoint !== undefined){
+                        multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
+                        multiArr[wolf[X]][wolf[Y]] = FREE_ID
+                    // } 
                 }
             }
             wolfLocList.forEach(moveWolf)
@@ -215,8 +249,11 @@
         }
         
         function calculateDistance(location1, location2){
-            return Math.sqrt(Math.pow((location1[X] - location2[X]), 2) + 
+            if(location1 !== undefined && location1 !== undefined){
+                return Math.sqrt(Math.pow((location1[X] - location2[X]), 2) + 
                             Math.pow((location1[Y] - location2[Y]), 2 ))
+            }
+            
         }
 
         function findWolfsSteps( multiArr, location ) {
@@ -228,11 +265,12 @@
             let steps = [up, down, right, left]
             steps = steps.filter(step => step[X] >= 0 && step[X] < multiArr.length &&
                                         step[Y] >= 0 && step[Y] < multiArr.length)
-            const findRebbitNearWolf = steps.filter(step => multiArr[step[X]][step[Y]] === RABBIT_ID)
+            let findRebbitNearWolf = steps.filter(step => multiArr[step[X]][step[Y]] === RABBIT_ID)
             if (findRebbitNearWolf.length !== 0) {
-                multiArr[findRebbitNearWolf[X][X]][findRebbitNearWolf[X][Y]] = WOLF_ID
-                multiArr[x][y] = FREE_ID
-                setTimeout(function () { alert("UPSSS..YOU LOST !!!") }, 1000);
+                findRebbitNearWolf = []
+                document.querySelector('.overlay').style.display = 'block';
+                document.querySelector('.alert').style.backgroundImage = "url('Images/sadrabbit.png')";
+                document.getElementById('message').innerHTML = '"UPSSS..YOU LOST !!!"';
             }else {
                 return steps.filter( step => multiArr[step[X]][step[Y]] === FREE_ID )
             }   
@@ -251,12 +289,14 @@
         }
         
         function setSizeOfGameGrid(size) {
+            const block = document.getElementById("container");
             const blocksize = UNIT_SIZE * size + 'px'
             block.style.width = blocksize;
             block.style.height = blocksize;
         }
         function createPlayGround(multiArr) {
             deleteAllChildElements();
+            const block = document.getElementById("container");
             const divArray = [];
             for (let i = 0; i < multiArr.length; i++) {
                 
@@ -265,30 +305,42 @@
                     let div = document.createElement("div");
                     let value = ''
                     block.appendChild(div);
+                    // const characters = [FREE_ID, RABBIT_ID, HOUSE_ID, WOLF_ID, FENCE_ID]
                     if (multiArr[i][j] === FREE_ID) {
                        value = div
                     } if (multiArr[i][j] === RABBIT_ID) {
+                        const rabbit = document.createElement("img");
+                        rabbit.src = "Images/rabbit.png";
                         value = div.appendChild(rabbit);
                     } else if (multiArr[i][j] === HOUSE_ID) {
+                        const house = document.createElement("img");
+                        house.src = "Images/house.png";
                         value = div.appendChild(house);
                     } else if (multiArr[i][j] === WOLF_ID) {
+                        const wolf = document.createElement("img");
+                        wolf.src = "Images/wolf.png";
                         value = div.appendChild(wolf);
                     } else if (multiArr[i][j] === FENCE_ID) {
+                        const fence = document.createElement("img");
+                        fence.src = "Images/fence.png";
                         value = div.appendChild(fence);
                     }
                     divArray[i][j] = value;
-                    
-                    console.log(value)
                 }
             }
         }
-
         function deleteAllChildElements() {
+            const block = document.getElementById("container");
             while (block.lastElementChild) {
                 block.removeChild(block.lastElementChild);
             }
-        } 
-
+        }
+        document.querySelector('.alert').style.backgroundRepeat = "no-repeat";
+        document.querySelector('.alert').style.backgroundSize = "500px 500px"; 
+        document.querySelector('.alert button').addEventListener('click', function () {
+            document.querySelector('.overlay').style.display = 'none';
+            onClickStartButton() 
+        }, false);
         addStartButtonEvent()
     </script>
 </body>
