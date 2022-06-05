@@ -6,17 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rabbit-Wolf Game</title>
     <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+        }
         .body {
             background-color: rgb(135, 94, 218);
             width: 100%;
-            padding: 20px 0 100px 0;
+            height: 97%;
+            padding-top: 30px;
         }
         .container {
             border: 1px solid black;
+            border-radius: 10px;
             background-color: rgb(35, 144, 122);
             margin: 0 auto;
-            width: 500px;
-            height: 20px;
+            width: 450px;
+            height: 40px;
     
         }
         .container div {
@@ -30,7 +36,7 @@
         .buttons {
             width: 500px;
             height: 90px;
-            margin: 0 auto;
+            margin: 0 auto 40px auto;
             text-align: center;
         }
         img {
@@ -48,6 +54,7 @@
         }
         h3 {
             color: white;
+            font-size: 30px;
         }
         .overlay {
             position: fixed;
@@ -62,10 +69,10 @@
             position: fixed;
             top: 10%;
             margin-top: -50px;
-            left: 41%;
+            left: 37%;
             margin-left: -100px;
-            width: 500px;
-            height: 500px;
+            width: 700px;
+            height: 700px;
             text-align: center;
             padding: 10px;
             background-color: rgba(255, 255, 255, 0.7); 
@@ -75,8 +82,9 @@
         }
         #message {
             padding-top: 40px;
-            padding-bottom: 180px;
-            font-size: 40px;
+            padding-bottom: 70px;
+            font-size: 43px;
+            font-weight: bold;
             color: rgb(204, 34, 8);
         }
     </style>
@@ -110,7 +118,14 @@
         const X = 0;
         const Y = 1;
         const UNIT_SIZE = 76;
-        
+
+        const IMAGES = {
+            [FREE_ID]: "Images/1x1.png",
+            [RABBIT_ID]: "Images/rabbit.png",
+            [HOUSE_ID]: "Images/house.png",
+            [WOLF_ID]: "Images/wolf.png",
+            [FENCE_ID]: "Images/fence.png",
+        }
         function onClickStartButton(){
             const select = document.getElementById("size");
             const sizeValue = select.value;
@@ -177,39 +192,36 @@
                 return [rawIndex, colIndex]
             }else {
                return getRandomLoc(multiArr) 
-            }
-            
+            }    
         }
         function drawPrimaryArray (sizeValue) {
             const playersList = createMultidimensionalArray(sizeValue)
             return playersList;
         }
-        function moveRabbit(multiArr, action) {
+        function moveRabbit(multiArr, actionVal) {
             const locationList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
-            locationList.forEach(item => {
-                const [a, b] = item
-                const [c, d] = action
+            locationList.forEach(loc => {
+                const [locX, locY] = loc
+                const [actionValX, actionValY] = actionVal
                 const step = multiArr.length - 1
                 let x = '', y = '';
-                if (c === -1 && a === 0) {
-                    [x, y] = [a + step, b + d]
-                }else if (c === 1 && a === step) {
-                    [x, y] = [a - step, b + d]
-                }else if (d === 1 && b === step) {
-                    [x, y] = [a + c, b - step]
-                }else if (d === -1 && b === 0) {
-                    [x, y] = [a + c, b + step]
+                if (actionValX === -1 && locX === 0) {
+                    [x, y] = [locX + step, locY + actionValY]
+                }else if (actionValX === 1 && locX === step) {
+                    [x, y] = [locX - step, locY + actionValY]
+                }else if (actionValY === 1 && locY === step) {
+                    [x, y] = [locX + actionValX, locY - step]
+                }else if (actionValY === -1 && locY === 0) {
+                    [x, y] = [locX + actionValX, locY + step]
                 }else {
-                    [x, y] = [a + c, b + d]
+                    [x, y] = [locX + actionValX, locY + actionValY]
                 }
                 if ( multiArr[x][y] === 0 ) {
-                    multiArr[a][b] = FREE_ID
+                    multiArr[locX][locY] = FREE_ID
                     multiArr[x][y] = RABBIT_ID
                 }else if ( multiArr[x][y] === HOUSE_ID ){
-                    multiArr[a][b] = FREE_ID
-                    document.querySelector('.overlay').style.display = 'block';
-                    document.querySelector('.alert').style.backgroundImage = "url('Images/balloons.png')";
-                    document.getElementById('message').innerHTML = '"CONGRATULATIONS..YOU WON !!!"';   
+                    multiArr[locX][locY] = FREE_ID
+                    youWon()
                 }  
             })
             return multiArr;    
@@ -225,8 +237,11 @@
                     const distances = steps.map(step => calculateDistance( rabbitCoord, step ))
                     const index = distances.indexOf(Math.min(...distances));
                     const nearPoint = steps[index]
-                    multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
-                    multiArr[wolf[X]][wolf[Y]] = FREE_ID
+                    if(nearPoint !== undefined){
+                        multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
+                        multiArr[wolf[X]][wolf[Y]] = FREE_ID
+                    }
+                    
                 }
             }
             wolfLocList.forEach(moveWolf)
@@ -240,19 +255,20 @@
         }
         function findWolfsSteps( multiArr, location ) {
             const [x, y] = location
+
             const up = [x-1, y]
             const down = [x+1, y]
             const right = [x, y+1]
             const left = [x, y-1]
-            let steps = [up, down, right, left]
-            steps = steps.filter(step => step[X] >= 0 && step[X] < multiArr.length &&
-                                        step[Y] >= 0 && step[Y] < multiArr.length)
+
+            const allDirections = [up, down, right, left]
+            const isInRange = ([x,y]) => 
+                x >= 0 && x < multiArr.length &&
+                y >= 0 && y < multiArr.length
+            const steps = allDirections.filter(isInRange)
             let findRebbitNearWolf = steps.filter(step => multiArr[step[X]][step[Y]] === RABBIT_ID)
             if (findRebbitNearWolf.length !== 0) {
-                findRebbitNearWolf = []
-                document.querySelector('.overlay').style.display = 'block';
-                document.querySelector('.alert').style.backgroundImage = "url('Images/sadrabbit.png')";
-                document.getElementById('message').innerHTML = '"UPSSS..YOU LOST !!!"';
+                youLost()
             }else {
                 return steps.filter( step => multiArr[step[X]][step[Y]] === FREE_ID )
             }   
@@ -277,36 +293,21 @@
         function createPlayGround(multiArr) {
             deleteAllChildElements();
             const block = document.getElementById("container");
-            const divArray = [];
+            
             for (let i = 0; i < multiArr.length; i++) {
-                
-                divArray[i] = [];
                 for (let j = 0; j < multiArr.length; j++) {
                     let div = document.createElement("div");
-                    let value = ''
                     block.appendChild(div);
-                    if (multiArr[i][j] === FREE_ID) {
-                       value = div
-                    } if (multiArr[i][j] === RABBIT_ID) {
-                        const rabbit = document.createElement("img");
-                        rabbit.src = "Images/rabbit.png";
-                        value = div.appendChild(rabbit);
-                    } else if (multiArr[i][j] === HOUSE_ID) {
-                        const house = document.createElement("img");
-                        house.src = "Images/house.png";
-                        value = div.appendChild(house);
-                    } else if (multiArr[i][j] === WOLF_ID) {
-                        const wolf = document.createElement("img");
-                        wolf.src = "Images/wolf.png";
-                        value = div.appendChild(wolf);
-                    } else if (multiArr[i][j] === FENCE_ID) {
-                        const fence = document.createElement("img");
-                        fence.src = "Images/fence.png";
-                        value = div.appendChild(fence);
-                    }
-                    divArray[i][j] = value;
+
+                    const cellValue = multiArr[i][j]
+                    div.appendChild(getImage(cellValue))
                 }
             }
+        }
+        function getImage(character) {
+            const player = document.createElement("img");
+            player.src = IMAGES[character];
+            return player
         }
         function deleteAllChildElements() {
             const block = document.getElementById("container");
@@ -314,11 +315,29 @@
                 block.removeChild(block.lastElementChild);
             }
         }
-        document.querySelector('.alert').style.backgroundRepeat = "no-repeat";
-        document.querySelector('.alert').style.backgroundSize = "500px 500px"; 
-        document.querySelector('.alert button').addEventListener('click', function () {
-            document.querySelector('.overlay').style.display = 'none';
-        }, false);
+        function youLost() {
+            document.getElementById("container").style.display = 'none';
+            document.querySelector('.overlay').style.display = 'block';
+            document.querySelector('.alert').style.backgroundImage = "url('Images/sadrabbit.png')";
+            document.getElementById('message').innerHTML = '"UPSSS..YOU LOST !!!"';
+            window.onkeydown = null;
+        }
+        function youWon() {
+            document.querySelector('.overlay').style.display = 'block';
+            document.querySelector('.alert').style.backgroundImage = "url('Images/balloons.png')";
+            document.getElementById('message').innerHTML = '"CONGRATULATIONS.. YOU WON !!!"';
+            document.getElementById("container").style.display = 'none';
+            window.onkeydown = null;
+        }
+        function gameStatusAlert() {
+            document.querySelector('.alert').style.backgroundRepeat = "no-repeat";
+            document.querySelector('.alert').style.backgroundSize = "100%"; 
+            document.querySelector('.alert button').addEventListener('click', function () {
+                document.querySelector('.overlay').style.display = 'none';
+                document.getElementById("container").style.display = 'block';
+            }, false);
+        }
+        gameStatusAlert()
     </script>
 </body>
 </html>
