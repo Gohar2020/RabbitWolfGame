@@ -229,7 +229,7 @@
         function moveWolfs(multiArr){
             const rabbitLocList = getIndexOfCurrentCharacter( multiArr, RABBIT_ID )
             const wolfLocList = getIndexOfCurrentCharacter( multiArr, WOLF_ID )
-            const rabbitCoord = rabbitLocList[X]
+            const rabbitCoord = rabbitLocList[0]
 
             const moveWolf = wolf => {
                 const steps = findWolfsSteps(multiArr, wolf)
