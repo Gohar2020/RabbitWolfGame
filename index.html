@@ -137,20 +137,29 @@
       }
 
       createGameUI(blockNum)
-
-      function onClickStartButton() {
+      console.log(blockNum)
+      function onClickStartButton(blockNum) {
         const select = document.getElementById(`size_${blockNum}`)
         const sizeValue = select.value
-        setSizeOfGameGrid(sizeValue)
+        setSizeOfGameGrid(sizeValue, blockNum)
         const primaryArray = drawPrimaryArray(sizeValue)
-        const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
+        const gameState = {
+          gameArray: primaryArray,
+          gameRunning: true,
+          gameMessage: "",
+          gameBlock: blockNum,
+        }
+        const newMultiArr = setPlayersLocation(gameState.gameArray, sizeValue)
+
         console.log(newMultiArr)
-        createPlayGround(newMultiArr)
-        createMovementButtons(newMultiArr)
-        createAddNewGameButton()
+        createPlayGround(newMultiArr, blockNum)
+        createMovementButtons(blockNum)
+        console.log(blockNum)
+        setMovmentButtonsEvents(newMultiArr, blockNum)
+        createAddNewGameButton(blockNum)
       }
 
-      function addRabbitMovementEvent(multiArr, event) {
+      function addRabbitMovementEvent(multiArr, event, blockNum) {
         let actionVal = []
         if (event === "ArrowUp") {
           actionVal = [-1, 0]
@@ -167,7 +176,7 @@
         let multiArrAfterRabbitMovement = moveRabbit(multiArr, actionVal)
         let multiArrAfterWolfMovement = moveWolfs(multiArrAfterRabbitMovement)
         console.log(multiArrAfterWolfMovement)
-        createPlayGround(multiArrAfterWolfMovement)
+        createPlayGround(multiArrAfterWolfMovement, blockNum)
       }
 
       function createMultidimensionalArray(blockSize) {
@@ -311,15 +320,15 @@
         return array.reduce(findInArray, [])
       }
 
-      function setSizeOfGameGrid(size) {
+      function setSizeOfGameGrid(size, blockNum) {
         const block = document.getElementById(`block_${blockNum}`)
         const blocksize = UNIT_SIZE * size + "px"
         block.style.width = blocksize
         block.style.height = blocksize
       }
 
-      function createPlayGround(multiArr) {
-        deleteAllChildElements()
+      function createPlayGround(multiArr, blockNum) {
+        deleteAllChildElements(blockNum)
         const block = document.getElementById(`block_${blockNum}`)
 
         for (let i = 0; i < multiArr.length; i++) {
@@ -338,7 +347,7 @@
         return player
       }
 
-      function deleteAllChildElements() {
+      function deleteAllChildElements(blockNum) {
         const block = document.getElementById(`block_${blockNum}`)
         while (block.lastElementChild) {
           block.removeChild(block.lastElementChild)
@@ -392,10 +401,12 @@
         const startAgainbtn = createButtonElement("start again", blockNum)
         divAlert.appendChild(startAgainbtn)
 
-        startbtn.onclick = onClickStartButton
+        startbtn.onclick = function () {
+          onClickStartButton(blockNum)
+        }
       }
 
-      function createMovementButtons(multiArr) {
+      function createMovementButtons(blockNum) {
         const movementdiv = document.querySelector(`#movement_${blockNum}`)
         while (movementdiv.lastElementChild) {
           movementdiv.removeChild(movementdiv.lastElementChild)
@@ -403,33 +414,39 @@
         const upbtn = createButtonElement("up", blockNum)
         upbtn.classList.add("up")
         movementdiv.appendChild(upbtn)
-        upbtn.onclick = function () {
-          addRabbitMovementEvent(multiArr, "ArrowUp")
-        }
 
         const leftbtn = createButtonElement("left", blockNum)
         leftbtn.classList.add("left")
         movementdiv.appendChild(leftbtn)
-        leftbtn.onclick = function () {
-          addRabbitMovementEvent(multiArr, "ArrowLeft")
-        }
 
         const rightbtn = createButtonElement("right", blockNum)
         rightbtn.classList.add("right")
         movementdiv.appendChild(rightbtn)
-        rightbtn.onclick = function () {
-          addRabbitMovementEvent(multiArr, "ArrowRight")
-        }
 
         const downbtn = createButtonElement("down", blockNum)
         downbtn.classList.add("down")
         movementdiv.appendChild(downbtn)
-        downbtn.onclick = function () {
-          addRabbitMovementEvent(multiArr, "ArrowDown")
-        }
       }
 
-      function createAddNewGameButton() {
+      function setMovmentButtonsEvents(multiArr, blockNum) {
+        const upbtn = document.getElementById(`up_${blockNum}`)
+        upbtn.onclick = function () {
+          addRabbitMovementEvent(multiArr, "ArrowUp", blockNum)
+        }
+        const leftbtn = document.getElementById(`left_${blockNum}`)
+        leftbtn.onclick = function () {
+          addRabbitMovementEvent(multiArr, "ArrowLeft", blockNum)
+        }
+        const rightbtn = document.getElementById(`right_${blockNum}`)
+        rightbtn.onclick = function () {
+          addRabbitMovementEvent(multiArr, "ArrowRight", blockNum)
+        }
+        const downbtn = document.getElementById(`down_${blockNum}`)
+        downbtn.onclick = function () {
+          addRabbitMovementEvent(multiArr, "ArrowDown", blockNum)
+        }
+      }
+      function createAddNewGameButton(blockNum) {
         const movementdiv = document.querySelector(`#movement_${blockNum}`)
         const addNewGameBtn = createButtonElement("ADD NEW GAME", blockNum)
         addNewGameBtn.classList.add("newGame")
@@ -464,7 +481,7 @@
         document.querySelector(".alert button").addEventListener(
           "click",
           function () {
-            onClickStartButton()
+            onClickStartButton(blockNum)
             document.querySelector(".overlay").style.display = "none"
             document.querySelector(".block").style.display = "block"
           },
