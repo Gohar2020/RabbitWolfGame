@@ -143,23 +143,23 @@
         const sizeValue = select.value
         setSizeOfGameGrid(sizeValue, blockNum)
         const primaryArray = drawPrimaryArray(sizeValue)
+        const newMultiArr = setPlayersLocation(primaryArray, sizeValue)
         const gameState = {
-          gameArray: primaryArray,
-          gameRunning: true,
+          gameArray: newMultiArr,
+          isGameRunning: true,
           gameMessage: "",
           gameBlock: blockNum,
         }
-        const newMultiArr = setPlayersLocation(gameState.gameArray, sizeValue)
-
         console.log(newMultiArr)
-        createPlayGround(newMultiArr, blockNum)
-        createMovementButtons(blockNum)
-        console.log(blockNum)
-        setMovmentButtonsEvents(newMultiArr, blockNum)
-        createAddNewGameButton(blockNum)
+        createPlayGround(gameState)
+        createMovementButtons(gameState.gameBlock)
+        setMovmentButtonsEvents(gameState)
+        createAddNewGameButton(gameState.gameBlock)
       }
 
-      function addRabbitMovementEvent(multiArr, event, blockNum) {
+      function addRabbitMovementEvent(gameState, event) {
+        const multiArr = gameState.gameArray
+        const blockNum = gameState.gameBlock
         let actionVal = []
         if (event === "ArrowUp") {
           actionVal = [-1, 0]
@@ -173,17 +173,10 @@
         if (event === "ArrowLeft") {
           actionVal = [0, -1]
         }
-        const multiArrAfterRabbitMovement = moveRabbit(
-          multiArr,
-          actionVal,
-          blockNum
-        )
-        const multiArrAfterWolfMovement = moveWolfs(
-          multiArrAfterRabbitMovement,
-          blockNum
-        )
+        const multiArrAfterRabbitMovement = moveRabbit(gameState, actionVal)
+        const multiArrAfterWolfMovement = moveWolfs(gameState)
         console.log(multiArrAfterWolfMovement)
-        createPlayGround(multiArrAfterWolfMovement, blockNum)
+        createPlayGround(gameState)
       }
 
       function createMultidimensionalArray(blockSize) {
@@ -230,57 +223,66 @@
         return playersList
       }
 
-      function moveRabbit(multiArr, actionVal, blockNum) {
-        const locationList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
-        locationList.forEach((loc) => {
-          const [locX, locY] = loc
-          const [actionValX, actionValY] = actionVal
-          const step = multiArr.length - 1
-          let x = "",
-            y = ""
-          if (actionValX === -1 && locX === 0) {
-            ;[x, y] = [locX + step, locY + actionValY]
-          } else if (actionValX === 1 && locX === step) {
-            ;[x, y] = [locX - step, locY + actionValY]
-          } else if (actionValY === 1 && locY === step) {
-            ;[x, y] = [locX + actionValX, locY - step]
-          } else if (actionValY === -1 && locY === 0) {
-            ;[x, y] = [locX + actionValX, locY + step]
-          } else {
-            ;[x, y] = [locX + actionValX, locY + actionValY]
-          }
-          if (multiArr[x][y] === 0) {
-            multiArr[locX][locY] = FREE_ID
-            multiArr[x][y] = RABBIT_ID
-          } else if (multiArr[x][y] === HOUSE_ID) {
-            multiArr[locX][locY] = FREE_ID
-            youWon(blockNum)
-          }
-        })
+      function moveRabbit(gameState, actionVal) {
+        const multiArr = gameState.gameArray
+        const blockNum = gameState.gameBlock
+        if (gameState.isGameRunning) {
+          const locationList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
+          locationList.forEach((loc) => {
+            const [locX, locY] = loc
+            const [actionValX, actionValY] = actionVal
+            const step = multiArr.length - 1
+            let x = "",
+              y = ""
+            if (actionValX === -1 && locX === 0) {
+              ;[x, y] = [locX + step, locY + actionValY]
+            } else if (actionValX === 1 && locX === step) {
+              ;[x, y] = [locX - step, locY + actionValY]
+            } else if (actionValY === 1 && locY === step) {
+              ;[x, y] = [locX + actionValX, locY - step]
+            } else if (actionValY === -1 && locY === 0) {
+              ;[x, y] = [locX + actionValX, locY + step]
+            } else {
+              ;[x, y] = [locX + actionValX, locY + actionValY]
+            }
+            if (multiArr[x][y] === 0) {
+              multiArr[locX][locY] = FREE_ID
+              multiArr[x][y] = RABBIT_ID
+            } else if (multiArr[x][y] === HOUSE_ID) {
+              multiArr[locX][locY] = FREE_ID
+              gameState.isGameRunning = false
+              youWon(blockNum)
+            }
+          })
+        }
         return multiArr
       }
 
-      function moveWolfs(multiArr, blockNum) {
-        const rabbitLocList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
-        console.log(rabbitLocList)
-        const wolfLocList = getIndexOfCurrentCharacter(multiArr, WOLF_ID)
-        const rabbitCoord = rabbitLocList[X]
+      function moveWolfs(gameState) {
+        const multiArr = gameState.gameArray
+        const blockNum = gameState.gameBlock
+        if (gameState.isGameRunning) {
+          const rabbitLocList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
+          const wolfLocList = getIndexOfCurrentCharacter(multiArr, WOLF_ID)
+          const rabbitCoord = rabbitLocList[X]
 
-        const moveWolf = (wolf) => {
-          const steps = findWolfsSteps(multiArr, wolf, blockNum)
-          if (steps !== undefined) {
-            const distances = steps.map((step) =>
-              calculateDistance(rabbitCoord, step)
-            )
-            const index = distances.indexOf(Math.min(...distances))
-            const nearPoint = steps[index]
-            if (nearPoint !== undefined) {
-              multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
-              multiArr[wolf[X]][wolf[Y]] = FREE_ID
+          const moveWolf = (wolf) => {
+            const steps = findWolfsSteps(gameState, wolf)
+            if (steps !== undefined) {
+              const distances = steps.map((step) =>
+                calculateDistance(rabbitCoord, step)
+              )
+              const index = distances.indexOf(Math.min(...distances))
+              const nearPoint = steps[index]
+              if (nearPoint !== undefined) {
+                multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
+                multiArr[wolf[X]][wolf[Y]] = FREE_ID
+              }
             }
           }
+          wolfLocList.forEach(moveWolf)
         }
-        wolfLocList.forEach(moveWolf)
+
         return multiArr
       }
 
@@ -293,7 +295,9 @@
         }
       }
 
-      function findWolfsSteps(multiArr, location, blockNum) {
+      function findWolfsSteps(gameState, location) {
+        const multiArr = gameState.gameArray
+        const blockNum = gameState.gameBlock
         const [x, y] = location
 
         const up = [x - 1, y]
@@ -309,6 +313,7 @@
           (step) => multiArr[step[X]][step[Y]] === RABBIT_ID
         )
         if (findRebbitNearWolf.length !== 0) {
+          gameState.isGameRunning = false
           youLost(blockNum)
         } else {
           return steps.filter((step) => multiArr[step[X]][step[Y]] === FREE_ID)
@@ -334,7 +339,9 @@
         block.style.height = blocksize
       }
 
-      function createPlayGround(multiArr, blockNum) {
+      function createPlayGround(gameState) {
+        const multiArr = gameState.gameArray
+        const blockNum = gameState.gameBlock
         deleteAllChildElements(blockNum)
         const block = document.getElementById(`block_${blockNum}`)
 
@@ -436,22 +443,23 @@
         movementdiv.appendChild(downbtn)
       }
 
-      function setMovmentButtonsEvents(multiArr, blockNum) {
+      function setMovmentButtonsEvents(gameState) {
+        const blockNum = gameState.gameBlock
         const upbtn = document.getElementById(`up_${blockNum}`)
         upbtn.onclick = function () {
-          addRabbitMovementEvent(multiArr, "ArrowUp", blockNum)
+          addRabbitMovementEvent(gameState, "ArrowUp")
         }
         const leftbtn = document.getElementById(`left_${blockNum}`)
         leftbtn.onclick = function () {
-          addRabbitMovementEvent(multiArr, "ArrowLeft", blockNum)
+          addRabbitMovementEvent(gameState, "ArrowLeft")
         }
         const rightbtn = document.getElementById(`right_${blockNum}`)
         rightbtn.onclick = function () {
-          addRabbitMovementEvent(multiArr, "ArrowRight", blockNum)
+          addRabbitMovementEvent(gameState, "ArrowRight")
         }
         const downbtn = document.getElementById(`down_${blockNum}`)
         downbtn.onclick = function () {
-          addRabbitMovementEvent(multiArr, "ArrowDown", blockNum)
+          addRabbitMovementEvent(gameState, "ArrowDown")
         }
       }
       function createAddNewGameButton(blockNum) {
@@ -493,6 +501,8 @@
         document.getElementById(`start again_${blockNum}`).onclick =
           function () {
             onClickStartButton(blockNum)
+            document.querySelector(`#overlay_${blockNum}`).style.display =
+              "none"
             showGameBlock(blockNum)
           }
         setgameStatusAlertStyle(blockNum)
