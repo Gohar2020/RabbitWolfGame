@@ -56,6 +56,7 @@
         background-color: rgb(35, 144, 122);
         color: white;
         font-size: 15px;
+        border: none;
       }
       h3 {
         color: white;
@@ -83,6 +84,7 @@
       }
       .alert button {
         bottom: 1px;
+        border: none;
       }
       .message {
         padding-top: 40px;
@@ -98,17 +100,20 @@
       }
       .up,
       .down {
-        width: 250px;
+        width: 200px;
         margin: 7px auto;
+        border: none;
       }
       .left,
       .right {
         width: 125px;
-        margin: 0 auto;
+        margin: 0 20px;
+        border: none;
       }
       .newGame {
         width: 280px;
         margin: 10px auto;
+        border: none;
       }
     </style>
   </head>
@@ -416,9 +421,9 @@
         const startAgainbtn = createButtonElement("start again", blockNum)
         divAlert.appendChild(startAgainbtn)
 
-        startbtn.onclick = function () {
+        startbtn.addEventListener("click", function () {
           onClickStartButton(blockNum)
-        }
+        })
       }
 
       function createMovementButtons(blockNum) {
@@ -467,11 +472,11 @@
         const addNewGameBtn = createButtonElement("ADD NEW GAME", blockNum)
         addNewGameBtn.classList.add("newGame")
         movementdiv.appendChild(addNewGameBtn)
-        addNewGameBtn.onclick = function () {
+        addNewGameBtn.addEventListener("click", function () {
           blockNum += 1
           createGameUI(blockNum)
           movementdiv.removeChild(addNewGameBtn)
-        }
+        })
       }
 
       function youLost(blockNum) {
@@ -481,13 +486,12 @@
         document.getElementById(`message_${blockNum}`).innerHTML =
           '"UPSSS..YOU LOST !!!"'
         hideGameBlock(blockNum)
-        document.getElementById(`start again_${blockNum}`).onclick =
-          function () {
+        document.getElementById(`start again_${blockNum}`).addEventListener("click", function () {
             onClickStartButton(blockNum)
             document.querySelector(`#overlay_${blockNum}`).style.display =
               "none"
             showGameBlock(blockNum)
-          }
+          })
         setgameStatusAlertStyle(blockNum)
       }
 
