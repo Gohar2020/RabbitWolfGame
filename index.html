@@ -5,117 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rabbit-Wolf Game</title>
-    <style>
-      body,
-      html {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-      }
-      .container {
-        background-color: rgb(135, 94, 218);
-        width: 96, 5%;
-        min-height: 94%;
-        padding: 30px;
-        margin: 0 auto;
-      }
-      .body {
-        border-bottom: 2px solid rgb(35, 144, 122);
-      }
-      .block {
-        border: 1px solid black;
-        border-radius: 10px;
-        background-color: rgb(35, 144, 122);
-        margin: 0 auto;
-        width: 450px;
-        height: 40px;
-      }
-      .block div {
-        border: 1px solid black;
-        width: 70px;
-        height: 70px;
-        float: left;
-        margin: 2px;
-        background-color: rgb(155, 205, 195);
-      }
-      .buttons {
-        width: 500px;
-        height: 70px;
-        margin: 30px auto 0 auto;
-        text-align: center;
-      }
-      img {
-        width: 70px;
-        height: 70px;
-      }
-      button,
-      select {
-        padding: 7px;
-        margin-right: 20px;
-        border-radius: 10px;
-        background-color: rgb(35, 144, 122);
-        color: white;
-        font-size: 15px;
-        border: none;
-      }
-      h3 {
-        color: white;
-        font-size: 30px;
-        text-align: center;
-      }
-      .overlay {
-        /* position: fixed; */
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.7);
-        display: none;
-      }
-      .alert {
-        /* position: fixed; */
-        top: 10%;
-        margin: 0 auto 0 auto;
-        left: 37%;
-        width: 700px;
-        height: 700px;
-        text-align: center;
-        padding: 10px;
-      }
-      .alert button {
-        bottom: 1px;
-        border: none;
-      }
-      .message {
-        padding-top: 40px;
-        padding-bottom: 70px;
-        font-size: 43px;
-        font-weight: bold;
-        color: white;
-      }
-      .movement {
-        width: 350px;
-        margin: 20px auto;
-        text-align: center;
-      }
-      .up,
-      .down {
-        width: 200px;
-        margin: 7px auto;
-        border: none;
-      }
-      .left,
-      .right {
-        width: 125px;
-        margin: 0 20px;
-        border: none;
-      }
-      .newGame {
-        width: 280px;
-        margin: 10px auto;
-        border: none;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="container" id="container">
@@ -156,7 +46,6 @@
           gameMessage: "",
           gameBlock: blockNum,
         }
-        console.log(newMultiArr)
         createPlayGround(gameState)
         createMovementButtons(gameState.gameBlock)
         setMovmentButtonsEvents(gameState)
@@ -282,25 +171,25 @@
         if (gameState.isGameRunning) {
           const rabbitLocList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
           const wolfLocList = getIndexOfCurrentCharacter(multiArr, WOLF_ID)
-          const rabbitCoord = rabbitLocList[X]
+          const rabbitCoord = rabbitLocList[0]
 
           const moveWolf = (wolf) => {
             const steps = findWolvesSteps(gameState, wolf)
-            if (steps !== undefined) {
+            if (steps.length !== 0) {
               const distances = steps.map((step) =>
                 calculateDistance(rabbitCoord, step)
               )
               const index = distances.indexOf(Math.min(...distances))
               const nearPoint = steps[index]
-              if (nearPoint !== undefined) {
-                multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
-                multiArr[wolf[X]][wolf[Y]] = FREE_ID
-              }
+              multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
+              multiArr[wolf[X]][wolf[Y]] = FREE_ID
+            } else {
+              gameState.isGameRunning = false
+              youLost(blockNum)
             }
           }
           wolfLocList.forEach(moveWolf)
         }
-
         return multiArr
       }
 
@@ -331,8 +220,7 @@
           (step) => multiArr[step[X]][step[Y]] === RABBIT_ID
         )
         if (findRebbitNearWolf.length !== 0) {
-          gameState.isGameRunning = false
-          youLost(blockNum)
+          return []
         } else {
           return steps.filter((step) => multiArr[step[X]][step[Y]] === FREE_ID)
         }
@@ -414,7 +302,6 @@
           var option = document.createElement("option")
           option.text = sizeArray[i]
           option.value = `${sizeArray[i][1]}${sizeArray[i][2]}`
-          console.log(option.value)
           selectList.appendChild(option)
         }
 
