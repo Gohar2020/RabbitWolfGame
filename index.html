@@ -43,13 +43,12 @@
         const gameState = {
           gameArray: newMultiArr,
           isGameRunning: true,
-          gameMessage: "",
           gameBlock: blockNum,
         }
         createPlayGround(gameState)
         createMovementButtons(gameState.gameBlock)
-        setMovmentButtonsEvents(gameState)
-        createAddNewGameButton(gameState.gameBlock)
+        callMovmentButtonsEvents(gameState)
+        createAddNewBoardButton(gameState.gameBlock)
         clearInterval(movementInterval)
         setTimoutForWolvesMovement(gameState)
       }
@@ -110,18 +109,18 @@
       }
 
       function setCharacterLocation(multiArr, locValue) {
-        const [x, y] = getRandomLoc(multiArr)
+        const [x, y] = getRandomLocation(multiArr)
         multiArr[x][y] = locValue
         return multiArr
       }
 
-      function getRandomLoc(multiArr) {
+      function getRandomLocation(multiArr) {
         const rawIndex = Math.floor(Math.random() * multiArr.length)
         const colIndex = Math.floor(Math.random() * multiArr.length)
         if (multiArr[rawIndex][colIndex] === FREE_ID) {
           return [rawIndex, colIndex]
         } else {
-          return getRandomLoc(multiArr)
+          return getRandomLocation(multiArr)
         }
       }
 
@@ -202,21 +201,25 @@
         }
       }
 
+      function getNearCellsOf([x, y]) {
+        return [
+          [x - 1, y],
+          [x + 1, y],
+          [x, y + 1],
+          [x, y - 1],
+        ]
+      }
+
       function findWolvesSteps(gameState, location) {
         const multiArr = gameState.gameArray
         const blockNum = gameState.gameBlock
         const [x, y] = location
 
-        const up = [x - 1, y]
-        const down = [x + 1, y]
-        const right = [x, y + 1]
-        const left = [x, y - 1]
-
-        const allDirections = [up, down, right, left]
+        const allNeighbourDirections = getNearCellsOf([x, y])
         const isInRange = ([x, y]) =>
           x >= 0 && x < multiArr.length && y >= 0 && y < multiArr.length
-        const steps = allDirections.filter(isInRange)
-        let findRebbitNearWolf = steps.filter(
+        const steps = allNeighbourDirections.filter(isInRange)
+        const findRebbitNearWolf = steps.filter(
           (step) => multiArr[step[X]][step[Y]] === RABBIT_ID
         )
         if (findRebbitNearWolf.length !== 0) {
@@ -281,18 +284,19 @@
         return divName
       }
 
-      function createButtonElement(name, id) {
+      function createButtonElement(name, id, divToAppend) {
         const btn = document.createElement("button")
         btn.id = `${name}_${id}`
+        btn.classList.add(`${name}`)
         btn.innerHTML = name.toUpperCase()
-        return btn
+        divToAppend.appendChild(btn)
       }
 
       function createGameUI(blockNum) {
         const body = createDivElement("body", blockNum)
         const buttons = createDivElement("buttons", blockNum)
-        const startbtn = createButtonElement("start", blockNum)
-        container.appendChild(body).appendChild(buttons).appendChild(startbtn)
+        createButtonElement("start", blockNum, buttons)
+        container.appendChild(body).appendChild(buttons)
 
         const sizeArray = [" 5 x 5 ", " 7 x 7 ", " 10 x 10 "]
         const selectList = document.createElement("select")
@@ -306,24 +310,22 @@
         }
 
         const block = createDivElement("block", blockNum)
-        body.appendChild(block)
         const movementBlock = createDivElement("movement", blockNum)
-        body.appendChild(movementBlock)
-
         const overlay = createDivElement("overlay", blockNum)
-        body.appendChild(overlay)
+        body.append(block, movementBlock, overlay)
 
         const divAlert = createDivElement("alert", blockNum)
         const message = document.createElement("p")
         message.id = `message_${blockNum}`
         message.classList.add("message")
         overlay.appendChild(divAlert).appendChild(message)
-        const startAgainbtn = createButtonElement("start again", blockNum)
-        divAlert.appendChild(startAgainbtn)
+        createButtonElement("start_again", blockNum, divAlert)
 
-        startbtn.addEventListener("click", function () {
-          onClickStartButton(blockNum)
-        })
+        document
+          .querySelector(`#start_${blockNum}`)
+          .addEventListener("click", function () {
+            onClickStartButton(blockNum)
+          })
       }
 
       function createMovementButtons(blockNum) {
@@ -331,89 +333,44 @@
         while (movementdiv.lastElementChild) {
           movementdiv.removeChild(movementdiv.lastElementChild)
         }
-        const upbtn = createButtonElement("up", blockNum)
-        upbtn.classList.add("up")
-        movementdiv.appendChild(upbtn)
-
-        const leftbtn = createButtonElement("left", blockNum)
-        leftbtn.classList.add("left")
-        movementdiv.appendChild(leftbtn)
-
-        const rightbtn = createButtonElement("right", blockNum)
-        rightbtn.classList.add("right")
-        movementdiv.appendChild(rightbtn)
-
-        const downbtn = createButtonElement("down", blockNum)
-        downbtn.classList.add("down")
-        movementdiv.appendChild(downbtn)
+        createButtonElement("up", blockNum, movementdiv)
+        createButtonElement("left", blockNum, movementdiv)
+        createButtonElement("right", blockNum, movementdiv)
+        createButtonElement("down", blockNum, movementdiv)
       }
 
-      function setMovmentButtonsEvents(gameState) {
-        const blockNum = gameState.gameBlock
-        const upbtn = document.getElementById(`up_${blockNum}`)
-        upbtn.onclick = function () {
-          drawRabbitMovement(gameState, "ArrowUp")
-        }
-        const leftbtn = document.getElementById(`left_${blockNum}`)
-        leftbtn.onclick = function () {
-          drawRabbitMovement(gameState, "ArrowLeft")
-        }
-        const rightbtn = document.getElementById(`right_${blockNum}`)
-        rightbtn.onclick = function () {
-          drawRabbitMovement(gameState, "ArrowRight")
-        }
-        const downbtn = document.getElementById(`down_${blockNum}`)
-        downbtn.onclick = function () {
-          drawRabbitMovement(gameState, "ArrowDown")
+      function addMovmentButtonEvent(gameState, clickedButton, direction) {
+        const btn = document.getElementById(
+          `${clickedButton}_${gameState.gameBlock}`
+        )
+        btn.onclick = function () {
+          drawRabbitMovement(gameState, direction)
         }
       }
-      function createAddNewGameButton(blockNum) {
+
+      function callMovmentButtonsEvents(gameState) {
+        addMovmentButtonEvent(gameState, "up", "ArrowUp")
+        addMovmentButtonEvent(gameState, "left", "ArrowLeft")
+        addMovmentButtonEvent(gameState, "right", "ArrowRight")
+        addMovmentButtonEvent(gameState, "down", "ArrowDown")
+      }
+
+      function createAddNewBoardButton(blockNum) {
         const movementdiv = document.querySelector(`#movement_${blockNum}`)
-        const addNewGameBtn = createButtonElement("ADD NEW GAME", blockNum)
-        addNewGameBtn.classList.add("newGame")
-        movementdiv.appendChild(addNewGameBtn)
-        addNewGameBtn.addEventListener("click", function () {
+        createButtonElement("new_board", blockNum, movementdiv)
+        const newBoardButton = document.querySelector(`#new_board_${blockNum}`)
+        newBoardButton.addEventListener("click", function () {
           blockNum += 1
           createGameUI(blockNum)
-          movementdiv.removeChild(addNewGameBtn)
+          movementdiv.removeChild(newBoardButton)
         })
       }
 
-      function youLost(blockNum) {
-        document.querySelector(`#overlay_${blockNum}`).style.display = "block"
-        document.querySelector(`#alert_${blockNum}`).style.backgroundImage =
-          "url('Images/sadrabbit.png')"
-        document.getElementById(`message_${blockNum}`).innerHTML =
-          '"UPSSS..YOU LOST !!!"'
-        hideGameBlock(blockNum)
-        document
-          .getElementById(`start again_${blockNum}`)
-          .addEventListener("click", function () {
-            onClickStartButton(blockNum)
-            document.querySelector(`#overlay_${blockNum}`).style.display =
-              "none"
-            showGameBlock(blockNum)
-          })
-        setgameStatusAlertStyle(blockNum)
-        clearInterval(movementInterval)
-      }
-
-      function youWon(blockNum) {
-        document.querySelector(`#overlay_${blockNum}`).style.display = "block"
-        document.querySelector(`#alert_${blockNum}`).style.backgroundImage =
-          "url('Images/balloons.png')"
-        document.getElementById(`message_${blockNum}`).innerHTML =
-          '"CONGRATULATIONS.. YOU WON !!!"'
-        hideGameBlock(blockNum)
-        document.getElementById(`start again_${blockNum}`).onclick =
-          function () {
-            onClickStartButton(blockNum)
-            document.querySelector(`#overlay_${blockNum}`).style.display =
-              "none"
-            showGameBlock(blockNum)
-          }
-        setgameStatusAlertStyle(blockNum)
-        clearInterval(movementInterval)
+      function setgameStatusAlertStyle(blockNum) {
+        document.querySelector(`#alert_${blockNum}`).style.backgroundRepeat =
+          "no-repeat"
+        document.querySelector(`#alert_${blockNum}`).style.backgroundSize =
+          "100%"
       }
 
       function hideGameBlock(blockNum, blockName) {
@@ -426,11 +383,35 @@
         document.querySelector(`#movement_${blockNum}`).style.display = "block"
         document.querySelector(`#buttons_${blockNum}`).style.display = "block"
       }
-      function setgameStatusAlertStyle(blockNum) {
-        document.querySelector(`#alert_${blockNum}`).style.backgroundRepeat =
-          "no-repeat"
-        document.querySelector(`#alert_${blockNum}`).style.backgroundSize =
-          "100%"
+
+      function drawGameOverBlock(blockNum, image, message) {
+        document.querySelector(`#overlay_${blockNum}`).style.display = "block"
+        document.querySelector(`#alert_${blockNum}`).style.backgroundImage =
+          image
+        document.getElementById(`message_${blockNum}`).innerHTML = message
+        hideGameBlock(blockNum)
+        document
+          .getElementById(`start_again_${blockNum}`)
+          .addEventListener("click", function () {
+            onClickStartButton(blockNum)
+            document.querySelector(`#overlay_${blockNum}`).style.display =
+              "none"
+            showGameBlock(blockNum)
+          })
+        setgameStatusAlertStyle(blockNum)
+        clearInterval(movementInterval)
+      }
+
+      function youLost(blockNum) {
+        const image = "url('Images/sadrabbit.png')"
+        const message = '"UPSSS..YOU LOST !!!"'
+        drawGameOverBlock(blockNum, image, message)
+      }
+
+      function youWon(blockNum) {
+        const image = "url('Images/balloons.png')"
+        const message = '"CONGRATULATIONS.. YOU WON !!!"'
+        drawGameOverBlock(blockNum, image, message)
       }
     </script>
   </body>
