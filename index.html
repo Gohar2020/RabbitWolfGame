@@ -12,6 +12,7 @@
       <h3>HELP THE BUNNY GET HOME</h3>
     </div>
     <script>
+      const WOLF_MOVE_MIN_MILISEC = 2000
       const FREE_ID = 0
       const RABBIT_ID = 1
       const HOUSE_ID = 2
@@ -20,8 +21,8 @@
       const X = 0
       const Y = 1
       const UNIT_SIZE = 76
-      let blockNum = 1
-      let movementInterval
+      let gameBoardNum = 0
+      const GAME_STATES = {}
       const container = document.getElementById("container")
 
       const IMAGES = {
@@ -32,25 +33,148 @@
         [FENCE_ID]: "Images/fence.png",
       }
 
-      createGameUI(blockNum)
+      function createNewGameButton() {
+        newGameBtn = "<button id='newGame'>NEW GAME</button>"
+        container.insertAdjacentHTML("beforeend", newGameBtn)
+      }
+      function addNewGameButtonEvent(gameBoardNum) {
+        const btn = document.getElementById("newGame")
+        btn.addEventListener("click", function () {
+          console.log("barev")
+          createGameBody(Object.keys(GAME_STATES).length)
+          addStartButtonEvent(gameBoardNum)
+        })
+      }
+      function createGameBody(gameBoardNum) {
+        const perGameBody = `
+          <div class="gameBody" id="body_${gameBoardNum}">
+            <div class="buttons">
+              <button class="start" id="start">START</button>
+              <select name="size" id="size" class="size">
+                <option value="5">5 * 5</option>
+                <option value="7">7 * 7</option>
+                <option value="10">10 * 10</option>
+              </select>
+            </div>
+            <div class="board" id="board"></div>
+            <div class="movement" id="movement"></div>
+          </div>
+          <div class="gameOverWindow" id="gameOverWindow_${gameBoardNum}">
+            <div class="alert">
+              <p id="message" class="message"></p><br/>
+              <button>START AGAIN</button>
+            </div>
+          </div>`
+        container.insertAdjacentHTML("beforeend", perGameBody)
+      }
 
-      function onClickStartButton(blockNum) {
-        const select = document.getElementById(`size_${blockNum}`)
-        const sizeValue = select.value
-        setSizeOfGameGrid(sizeValue, blockNum)
-        const primaryArray = drawPrimaryArray(sizeValue)
-        const newMultiArr = setAllPlayersLocation(primaryArray, sizeValue)
-        const gameState = {
-          gameArray: newMultiArr,
-          isGameRunning: true,
-          gameBlock: blockNum,
+      function getCertainDivElement(gameBoardNum, elementClassName) {
+        const element = document.querySelector(
+          `#body_${gameBoardNum} .${elementClassName}`
+        )
+        return element
+      }
+      function addStartButtonEvent(gameBoardNum) {
+        const btn = getCertainDivElement(gameBoardNum, "start")
+        btn.addEventListener("click", function () {
+          onClickStartButton(gameBoardNum)
+        })
+      }
+      function setSizeOfGameGrid(sizeValue, gameBoardNum) {
+        const board = getCertainDivElement(gameBoardNum, "board")
+        const boardsize = UNIT_SIZE * sizeValue + "px"
+        board.style.width = boardsize
+        board.style.height = boardsize
+      }
+
+      function createMultidimensionalArray(boardSize) {
+        const gameArray = []
+        for (let i = 0; i < boardSize; i++) {
+          gameArray[i] = []
+          for (let j = 0; j < boardSize; j++) {
+            gameArray[i][j] = FREE_ID
+          }
         }
-        createPlayGround(gameState)
-        createMovementButtons(gameState.gameBlock)
-        callMovmentButtonsEvents(gameState)
-        createAddNewBoardButton(gameState.gameBlock)
-        clearInterval(movementInterval)
-        setTimoutForWolvesMovement(gameState)
+        return gameArray
+      }
+
+      function drawPrimaryArray(sizeValue) {
+        const playersList = createMultidimensionalArray(sizeValue)
+        return playersList
+      }
+
+      function getRandomLocation(gameArray) {
+        const rawIndex = Math.floor(Math.random() * gameArray.length)
+        const colIndex = Math.floor(Math.random() * gameArray.length)
+        if (gameArray[rawIndex][colIndex] === FREE_ID) {
+          return [rawIndex, colIndex]
+        } else {
+          return getRandomLocation(gameArray)
+        }
+      }
+
+      function setCharacterLocation(gameArray, characterId) {
+        const [x, y] = getRandomLocation(gameArray)
+        gameArray[x][y] = characterId
+        return gameArray
+      }
+
+      function setAllPlayersLocation(gameArray, sizeVal) {
+        setCharacterLocation(gameArray, RABBIT_ID)
+        setCharacterLocation(gameArray, HOUSE_ID)
+        for (let i = 0; i < (sizeVal / 100) * 60; i++) {
+          setCharacterLocation(gameArray, WOLF_ID)
+        }
+        for (let i = 0; i < (sizeVal / 100) * 40; i++) {
+          setCharacterLocation(gameArray, FENCE_ID)
+        }
+        return gameArray
+      }
+
+      function deleteAllChildElements(gameBoardNum) {
+        const board = getCertainDivElement(gameBoardNum, "board")
+        while (board.lastElementChild) {
+          board.removeChild(board.lastElementChild)
+        }
+      }
+      function getImage(character) {
+        const player = document.createElement("img")
+        player.src = IMAGES[character]
+        return player
+      }
+
+      function createPlayGround(gameState) {
+        const gameArray = gameState.gameArray
+        const gameBoardNum = gameState.gameBoardNum
+        deleteAllChildElements(gameBoardNum)
+        const board = getCertainDivElement(gameBoardNum, "board")
+
+        for (let i = 0; i < gameArray.length; i++) {
+          for (let j = 0; j < gameArray.length; j++) {
+            let div = document.createElement("div")
+            board.appendChild(div)
+            const cellValue = gameArray[i][j]
+            div.appendChild(getImage(cellValue))
+          }
+        }
+      }
+      function createButtonElement(name, id, divToAppend) {
+        const btn = document.createElement("button")
+        btn.id = `${name}_${id}`
+        btn.classList.add(`${name}`)
+        btn.innerHTML = name.toUpperCase()
+        divToAppend.appendChild(btn)
+      }
+
+      function createMovementButtons(gameBoardNum) {
+        const movementdiv = getCertainDivElement(gameBoardNum, "movement")
+        while (movementdiv.lastElementChild) {
+          movementdiv.removeChild(movementdiv.lastElementChild)
+        }
+        createButtonElement("up", gameBoardNum, movementdiv)
+        createButtonElement("left", gameBoardNum, movementdiv)
+        createButtonElement("right", gameBoardNum, movementdiv)
+        createButtonElement("down", gameBoardNum, movementdiv)
       }
 
       function setRabbitMovementDirection(direction) {
@@ -70,278 +194,52 @@
         return actionVal
       }
 
-      function drawWolvesMovement(gameState) {
-        moveWolves(gameState)
-        createPlayGround(gameState)
-      }
-
-      function setTimoutForWolvesMovement(gameState) {
-        movementInterval = setInterval(drawWolvesMovement, 1300, gameState)
-      }
-
-      function drawRabbitMovement(gameState, direction) {
-        const actionVal = setRabbitMovementDirection(direction)
-        const multiArrAfterRabbitMovement = moveRabbit(gameState, actionVal)
-        createPlayGround(gameState)
-      }
-
-      function createMultidimensionalArray(blockSize) {
-        const multiArray = []
-        for (let i = 0; i < blockSize; i++) {
-          multiArray[i] = []
-          for (let j = 0; j < blockSize; j++) {
-            multiArray[i][j] = FREE_ID
-          }
-        }
-        return multiArray
-      }
-
-      function setAllPlayersLocation(multiArr, sizeVal) {
-        setCharacterLocation(multiArr, RABBIT_ID)
-        setCharacterLocation(multiArr, HOUSE_ID)
-        for (let i = 0; i < (sizeVal / 100) * 60; i++) {
-          setCharacterLocation(multiArr, WOLF_ID)
-        }
-        for (let i = 0; i < (sizeVal / 100) * 40; i++) {
-          setCharacterLocation(multiArr, FENCE_ID)
-        }
-        return multiArr
-      }
-
-      function setCharacterLocation(multiArr, locValue) {
-        const [x, y] = getRandomLocation(multiArr)
-        multiArr[x][y] = locValue
-        return multiArr
-      }
-
-      function getRandomLocation(multiArr) {
-        const rawIndex = Math.floor(Math.random() * multiArr.length)
-        const colIndex = Math.floor(Math.random() * multiArr.length)
-        if (multiArr[rawIndex][colIndex] === FREE_ID) {
-          return [rawIndex, colIndex]
-        } else {
-          return getRandomLocation(multiArr)
-        }
-      }
-
-      function drawPrimaryArray(sizeValue) {
-        const playersList = createMultidimensionalArray(sizeValue)
-        return playersList
-      }
-
-      function moveRabbit(gameState, diractionVal) {
-        const multiArr = gameState.gameArray
-        const blockNum = gameState.gameBlock
-        if (gameState.isGameRunning) {
-          const locationList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
-          locationList.forEach((loc) => {
-            const [locX, locY] = loc
-            const [directionX, directionY] = diractionVal
-            const step = multiArr.length - 1
-            let x = "",
-              y = ""
-            if (directionX === -1 && locX === 0) {
-              ;[x, y] = [locX + step, locY + directionY]
-            } else if (directionX === 1 && locX === step) {
-              ;[x, y] = [locX - step, locY + directionY]
-            } else if (directionY === 1 && locY === step) {
-              ;[x, y] = [locX + directionX, locY - step]
-            } else if (directionY === -1 && locY === 0) {
-              ;[x, y] = [locX + directionX, locY + step]
-            } else {
-              ;[x, y] = [locX + directionX, locY + directionY]
-            }
-            if (multiArr[x][y] === 0) {
-              multiArr[locX][locY] = FREE_ID
-              multiArr[x][y] = RABBIT_ID
-            } else if (multiArr[x][y] === HOUSE_ID) {
-              multiArr[locX][locY] = FREE_ID
-              gameState.isGameRunning = false
-              youWon(blockNum)
-            }
-          })
-        }
-        return multiArr
-      }
-
-      function moveWolves(gameState) {
-        const multiArr = gameState.gameArray
-        const blockNum = gameState.gameBlock
-        if (gameState.isGameRunning) {
-          const rabbitLocList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
-          const wolfLocList = getIndexOfCurrentCharacter(multiArr, WOLF_ID)
-          const rabbitCoord = rabbitLocList[0]
-
-          const moveWolf = (wolf) => {
-            const steps = findWolvesSteps(gameState, wolf)
-            if (steps.length !== 0) {
-              const distances = steps.map((step) =>
-                calculateDistance(rabbitCoord, step)
-              )
-              const index = distances.indexOf(Math.min(...distances))
-              const nearPoint = steps[index]
-              multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
-              multiArr[wolf[X]][wolf[Y]] = FREE_ID
-            } else {
-              gameState.isGameRunning = false
-              youLost(blockNum)
-            }
-          }
-          wolfLocList.forEach(moveWolf)
-        }
-        return multiArr
-      }
-
-      function calculateDistance(location1, location2) {
-        if (location1 !== undefined && location1 !== undefined) {
-          return Math.sqrt(
-            Math.pow(location1[X] - location2[X], 2) +
-              Math.pow(location1[Y] - location2[Y], 2)
-          )
-        }
-      }
-
-      function getNearCellsOf([x, y]) {
-        return [
-          [x - 1, y],
-          [x + 1, y],
-          [x, y + 1],
-          [x, y - 1],
-        ]
-      }
-
-      function findWolvesSteps(gameState, location) {
-        const multiArr = gameState.gameArray
-        const blockNum = gameState.gameBlock
-        const [x, y] = location
-
-        const allNeighbourDirections = getNearCellsOf([x, y])
-        const isInRange = ([x, y]) =>
-          x >= 0 && x < multiArr.length && y >= 0 && y < multiArr.length
-        const steps = allNeighbourDirections.filter(isInRange)
-        const findRebbitNearWolf = steps.filter(
-          (step) => multiArr[step[X]][step[Y]] === RABBIT_ID
-        )
-        if (findRebbitNearWolf.length !== 0) {
-          return []
-        } else {
-          return steps.filter((step) => multiArr[step[X]][step[Y]] === FREE_ID)
-        }
-      }
-
-      function getIndexOfCurrentCharacter(array, charValue) {
+      function getIndexOfCurrentCharacter(gameArray, characterId) {
         const findInArray = function (accumulator, row, x) {
           row.forEach((element, y) => {
-            if (element === charValue) {
+            if (element === characterId) {
               accumulator.push([x, y])
             }
           })
           return accumulator
         }
-        return array.reduce(findInArray, [])
+        return gameArray.reduce(findInArray, [])
       }
 
-      function setSizeOfGameGrid(size, blockNum) {
-        const block = document.getElementById(`block_${blockNum}`)
-        const blocksize = UNIT_SIZE * size + "px"
-        block.style.width = blocksize
-        block.style.height = blocksize
-      }
-
-      function createPlayGround(gameState) {
+      function moveRabbit(gameState, diractionVal) {
         const multiArr = gameState.gameArray
-        const blockNum = gameState.gameBlock
-        deleteAllChildElements(blockNum)
-        const block = document.getElementById(`block_${blockNum}`)
+        const gameBlock = gameState.gameBlock
+        if (gameState.isGameRunning === false) {
+          return
+        }
 
-        for (let i = 0; i < multiArr.length; i++) {
-          for (let j = 0; j < multiArr.length; j++) {
-            let div = document.createElement("div")
-            block.appendChild(div)
-            const cellValue = multiArr[i][j]
-            div.appendChild(getImage(cellValue))
+        const locationList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
+        locationList.forEach((loc) => {
+          const [locX, locY] = loc
+          const [directionX, directionY] = diractionVal
+          const step = multiArr.length - 1
+          let x = locX + directionX
+          let y = locY + directionY
+
+          if (multiArr[x][y] === 0) {
+            multiArr[locX][locY] = FREE_ID
+            multiArr[x][y] = RABBIT_ID
+          } else if (multiArr[x][y] === HOUSE_ID) {
+            multiArr[locX][locY] = FREE_ID
+            gameState.isGameRunning = false
+            youWon(gameState)
           }
-        }
+        })
       }
 
-      function getImage(character) {
-        const player = document.createElement("img")
-        player.src = IMAGES[character]
-        return player
-      }
-
-      function deleteAllChildElements(blockNum) {
-        const block = document.getElementById(`block_${blockNum}`)
-        while (block.lastElementChild) {
-          block.removeChild(block.lastElementChild)
-        }
-      }
-
-      function createDivElement(name, id) {
-        const divName = document.createElement("div")
-        divName.id = `${name}_${id}`
-        divName.classList.add(name)
-        return divName
-      }
-
-      function createButtonElement(name, id, divToAppend) {
-        const btn = document.createElement("button")
-        btn.id = `${name}_${id}`
-        btn.classList.add(`${name}`)
-        btn.innerHTML = name.toUpperCase()
-        divToAppend.appendChild(btn)
-      }
-
-      function createGameUI(blockNum) {
-        const body = createDivElement("body", blockNum)
-        const buttons = createDivElement("buttons", blockNum)
-        createButtonElement("start", blockNum, buttons)
-        container.appendChild(body).appendChild(buttons)
-
-        const sizeArray = [" 5 x 5 ", " 7 x 7 ", " 10 x 10 "]
-        const selectList = document.createElement("select")
-        selectList.id = `size_${blockNum}`
-        buttons.appendChild(selectList)
-        for (var i = 0; i < sizeArray.length; i++) {
-          var option = document.createElement("option")
-          option.text = sizeArray[i]
-          option.value = `${sizeArray[i][1]}${sizeArray[i][2]}`
-          selectList.appendChild(option)
-        }
-
-        const block = createDivElement("block", blockNum)
-        const movementBlock = createDivElement("movement", blockNum)
-        const overlay = createDivElement("overlay", blockNum)
-        body.append(block, movementBlock, overlay)
-
-        const divAlert = createDivElement("alert", blockNum)
-        const message = document.createElement("p")
-        message.id = `message_${blockNum}`
-        message.classList.add("message")
-        overlay.appendChild(divAlert).appendChild(message)
-        createButtonElement("start_again", blockNum, divAlert)
-
-        document
-          .querySelector(`#start_${blockNum}`)
-          .addEventListener("click", function () {
-            onClickStartButton(blockNum)
-          })
-      }
-
-      function createMovementButtons(blockNum) {
-        const movementdiv = document.querySelector(`#movement_${blockNum}`)
-        while (movementdiv.lastElementChild) {
-          movementdiv.removeChild(movementdiv.lastElementChild)
-        }
-        createButtonElement("up", blockNum, movementdiv)
-        createButtonElement("left", blockNum, movementdiv)
-        createButtonElement("right", blockNum, movementdiv)
-        createButtonElement("down", blockNum, movementdiv)
+      function drawRabbitMovement(gameState, direction) {
+        const actionVal = setRabbitMovementDirection(direction)
+        console.log("barev")
       }
 
       function addMovmentButtonEvent(gameState, clickedButton, direction) {
         const btn = document.getElementById(
-          `${clickedButton}_${gameState.gameBlock}`
+          `${clickedButton}_${gameState.gameBoardNum}`
         )
         btn.onclick = function () {
           drawRabbitMovement(gameState, direction)
@@ -349,70 +247,32 @@
       }
 
       function callMovmentButtonsEvents(gameState) {
-        addMovmentButtonEvent(gameState, "up", "ArrowUp")
-        addMovmentButtonEvent(gameState, "left", "ArrowLeft")
-        addMovmentButtonEvent(gameState, "right", "ArrowRight")
-        addMovmentButtonEvent(gameState, "down", "ArrowDown")
+        addMovmentButtonEvent(gameState, "up", "Up")
+        addMovmentButtonEvent(gameState, "left", "Left")
+        addMovmentButtonEvent(gameState, "right", "Right")
+        addMovmentButtonEvent(gameState, "down", "Down")
       }
 
-      function createAddNewBoardButton(blockNum) {
-        const movementdiv = document.querySelector(`#movement_${blockNum}`)
-        createButtonElement("new_board", blockNum, movementdiv)
-        const newBoardButton = document.querySelector(`#new_board_${blockNum}`)
-        newBoardButton.addEventListener("click", function () {
-          blockNum += 1
-          createGameUI(blockNum)
-          movementdiv.removeChild(newBoardButton)
-        })
-      }
+      function onClickStartButton(gameBoardNum) {
+        const select = getCertainDivElement(gameBoardNum, "size")
+        const sizeValue = select.value
+        console.log(sizeValue)
+        setSizeOfGameGrid(sizeValue, gameBoardNum)
+        const primaryArray = drawPrimaryArray(sizeValue)
+        const newGameArray = setAllPlayersLocation(primaryArray, sizeValue)
 
-      function setgameStatusAlertStyle(blockNum) {
-        document.querySelector(`#alert_${blockNum}`).style.backgroundRepeat =
-          "no-repeat"
-        document.querySelector(`#alert_${blockNum}`).style.backgroundSize =
-          "100%"
+        const gameState = {
+          gameArray: newGameArray,
+          isGameRunning: true,
+          gameBoardNum,
+        }
+        GAME_STATES[gameBoardNum] = gameState
+        createPlayGround(gameState)
+        createMovementButtons(gameState.gameBoardNum)
+        callMovmentButtonsEvents(gameState)
       }
-
-      function hideGameBlock(blockNum, blockName) {
-        document.querySelector(`#block_${blockNum}`).style.display = "none"
-        document.querySelector(`#movement_${blockNum}`).style.display = "none"
-        document.querySelector(`#buttons_${blockNum}`).style.display = "none"
-      }
-      function showGameBlock(blockNum) {
-        document.querySelector(`#block_${blockNum}`).style.display = "block"
-        document.querySelector(`#movement_${blockNum}`).style.display = "block"
-        document.querySelector(`#buttons_${blockNum}`).style.display = "block"
-      }
-
-      function drawGameOverBlock(blockNum, image, message) {
-        document.querySelector(`#overlay_${blockNum}`).style.display = "block"
-        document.querySelector(`#alert_${blockNum}`).style.backgroundImage =
-          image
-        document.getElementById(`message_${blockNum}`).innerHTML = message
-        hideGameBlock(blockNum)
-        document
-          .getElementById(`start_again_${blockNum}`)
-          .addEventListener("click", function () {
-            onClickStartButton(blockNum)
-            document.querySelector(`#overlay_${blockNum}`).style.display =
-              "none"
-            showGameBlock(blockNum)
-          })
-        setgameStatusAlertStyle(blockNum)
-        clearInterval(movementInterval)
-      }
-
-      function youLost(blockNum) {
-        const image = "url('Images/sadrabbit.png')"
-        const message = '"UPSSS..YOU LOST !!!"'
-        drawGameOverBlock(blockNum, image, message)
-      }
-
-      function youWon(blockNum) {
-        const image = "url('Images/balloons.png')"
-        const message = '"CONGRATULATIONS.. YOU WON !!!"'
-        drawGameOverBlock(blockNum, image, message)
-      }
+      createNewGameButton()
+      addNewGameButtonEvent(gameBoardNum)
     </script>
   </body>
 </html>
