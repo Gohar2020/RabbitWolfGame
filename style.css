@@ -3,6 +3,7 @@
      width: 100%;
      height: 100%;
      margin: 0;
+     text-align: center;
  }
 
  .container {
@@ -13,11 +14,11 @@
      margin: 0 auto;
  }
 
- .body {
+ .body, .gameBody {
      border-bottom: 2px solid rgb(35, 144, 122);
  }
 
- .block {
+ .block, .board {
      border: 1px solid black;
      border-radius: 10px;
      background-color: rgb(35, 144, 122);
@@ -26,7 +27,7 @@
      height: 40px;
  }
 
- .block div {
+ .block div, .board div {
      border: 1px solid black;
      width: 70px;
      height: 70px;
@@ -64,7 +65,7 @@
      text-align: center;
  }
 
- .overlay {
+ .overlay, .gameOverWindow {
      /* position: fixed; */
      top: 0;
      left: 0;
@@ -118,7 +119,7 @@
      border: none;
  }
 
- .new_board {
+ .new_board, #newGame {
      width: 280px;
      margin: 10px auto;
      border: none;
