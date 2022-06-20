@@ -110,6 +110,7 @@
           "startAgain"
         )
         startAgainBtn.addEventListener("click", function () {
+          gameState.timers.forEach(clearInterval)
           onClickStartButton(gameBoardNum)
           window.style.display = "none"
           body.style.display = "block"
@@ -117,9 +118,9 @@
         setgameStatusAlertStyle(gameBoardNum)
       }
 
-      function setSizeOfGameGrid(sizeValue, gameBoardNum) {
+      function setSizeOfGameGrid(boardSize, gameBoardNum) {
         const board = getBoardDivElement(gameBoardNum, "board")
-        const boardsize = UNIT_SIZE * sizeValue + "px"
+        const boardsize = UNIT_SIZE * boardSize + "px"
         board.style.width = boardsize
         board.style.height = boardsize
       }
@@ -133,11 +134,6 @@
           }
         }
         return gameArray
-      }
-
-      function drawPrimaryArray(sizeValue) {
-        const playersList = createMultidimensionalArray(sizeValue)
-        return playersList
       }
 
       function getRandomLocation(gameArray) {
@@ -156,13 +152,13 @@
         return gameArray
       }
 
-      function setAllPlayersLocation(gameArray, sizeVal) {
+      function setAllPlayersLocation(gameArray, boardSize) {
         setCharacterLocation(gameArray, RABBIT_ID)
         setCharacterLocation(gameArray, HOUSE_ID)
-        for (let i = 0; i < (sizeVal / 100) * 60; i++) {
+        for (let i = 0; i < (boardSize / 100) * 60; i++) {
           setCharacterLocation(gameArray, WOLF_ID)
         }
-        for (let i = 0; i < (sizeVal / 100) * 40; i++) {
+        for (let i = 0; i < (boardSize / 100) * 40; i++) {
           setCharacterLocation(gameArray, FENCE_ID)
         }
         return gameArray
@@ -225,42 +221,32 @@
       }
 
       function getIndexOfCurrentCharacter(gameArray, characterId) {
+        let i = 1
         const findInArray = function (accumulator, row, x) {
           row.forEach((element, y) => {
             if (element === characterId) {
-              accumulator.push([x, y])
+              accumulator[i] = [x, y]
+              i++
             }
           })
           return accumulator
         }
-        return gameArray.reduce(findInArray, [])
+        return gameArray.reduce(findInArray, {})
       }
 
       function youLost(gameState) {
-        const image = "url('Images/sadrabbit.jpg')"
+        const image = "url('Images/sadrabbit.png')"
         const message = '"UPSSS..YOU LOST !!!"'
         drawGameOverBlock(gameState, image, message)
-        // gameState.timers.forEach(clearInterval)
+        console.log(gameState.timers)
+        gameState.timers.forEach(clearInterval)
       }
 
       function youWon(gameState) {
         const image = "url('Images/balloons.png')"
         const message = '"CONGRATULATIONS.. YOU WON !!!"'
         drawGameOverBlock(gameState, image, message)
-        // gameState.timers.forEach(clearInterval)
-      }
-
-      function setPointsOutOfRangeDirections([x, y], maxStep, direction) {
-        const movementEndPoints = {
-          ["Up"]: [x + maxStep, y],
-          ["Down"]: [x - maxStep, y],
-          ["Left"]: [x, y + maxStep],
-          ["Right"]: [x, y - maxStep],
-        }
-        const newLocation = movementEndPoints[direction]
-        x = newLocation[X]
-        y = newLocation[Y]
-        return [x, y]
+        gameState.timers.forEach(clearInterval)
       }
 
       function moveRabbit(gameState, direction, directionVal) {
@@ -269,20 +255,14 @@
         }
         const gameArray = gameState.gameArray
         const rabbitLocations = getIndexOfCurrentCharacter(gameArray, RABBIT_ID)
-        const [rabbitLocX, rabbitLocY] = rabbitLocations[0]
+        const [rabbitLocX, rabbitLocY] = rabbitLocations[1]
         const [directionX, directionY] = directionVal
-        const maxStep = gameArray.length - 1
-        let [x, y] = [rabbitLocX + directionX, rabbitLocY + directionY]
+        const maxStep = gameArray.length
 
-        const isInRange = ([x, y]) =>
-          x >= 0 && x <= maxStep && y >= 0 && y <= maxStep
-        if (isInRange([x, y]) === false) {
-          ;[x, y] = setPointsOutOfRangeDirections(
-            rabbitLocations[0],
-            maxStep,
-            direction
-          )
-        }
+        let [x, y] = [rabbitLocX + directionX, rabbitLocY + directionY]
+        x = (x + maxStep) % maxStep
+        y = (y + maxStep) % maxStep
+
         if (gameArray[x][y] === FREE_ID) {
           gameArray[rabbitLocX][rabbitLocY] = FREE_ID
           gameArray[x][y] = RABBIT_ID
@@ -315,62 +295,107 @@
         addMovmentButtonEvent(gameState, "down", "Down")
       }
 
-      // function moveWolvesByRandomInterval(gameState) {
-      //   const multiArr = gameState.gameArray
+      function calculateDistance(location1, location2) {
+        if (location1 !== undefined && location1 !== undefined) {
+          return Math.sqrt(
+            Math.pow(location1[X] - location2[X], 2) +
+              Math.pow(location1[Y] - location2[Y], 2)
+          )
+        }
+      }
 
-      //   const wolfLocList = getIndexOfCurrentCharacter(multiArr, WOLF_ID)
+      function getNearCellsOf([x, y]) {
+        return [
+          [x - 1, y],
+          [x + 1, y],
+          [x, y + 1],
+          [x, y - 1],
+        ]
+      }
 
-      //   const moveWolf = (wolf) => {
-      //     const rabbitLocList = getIndexOfCurrentCharacter(multiArr, RABBIT_ID)
-      //     const rabbitCoord = rabbitLocList[0]
+      function findWolvesSteps(gameState, location) {
+        const gameArray = gameState.gameArray
+        const [x, y] = location
 
-      //     if (gameState.isGameRunning === false) {
-      //       return
-      //     }
+        const allNeighbourDirections = getNearCellsOf([x, y])
+        const isInRange = ([x, y]) =>
+          x >= 0 && x < gameArray.length && y >= 0 && y < gameArray.length
+        const steps = allNeighbourDirections.filter(isInRange)
+        const findRebbitNearWolf = steps.filter(
+          (step) => gameArray[step[X]][step[Y]] === RABBIT_ID
+        )
+        if (findRebbitNearWolf.length !== 0) {
+          return []
+        } else {
+          return steps.filter((step) => gameArray[step[X]][step[Y]] === FREE_ID)
+        }
+      }
 
-      //     const steps = findWolvesSteps(gameState, wolf)
-      //     if (steps.length !== 0) {
-      //       const distances = steps.map((step) =>
-      //         calculateDistance(rabbitCoord, step)
-      //       )
-      //       const index = distances.indexOf(Math.min(...distances))
-      //       const nearPoint = steps[index]
-      //       multiArr[nearPoint[X]][nearPoint[Y]] = WOLF_ID
-      //       multiArr[wolf[X]][wolf[Y]] = FREE_ID
-      //       createPlayGround(gameState)
-      //     } else {
-      //       gameState.isGameRunning = false
-      //       youLost(gameState)
-      //     }
-      //   }
+      function moveWolfByRandomInterval(gameState, wolfNum) {
+        const gameArray = gameState.gameArray
+        const wolfLocList = getIndexOfCurrentCharacter(gameArray, WOLF_ID)
+        console.log(wolfLocList)
+        const wolf = wolfLocList[wolfNum]
 
-      //   gameState.timers = wolfLocList.map((wolf) => {
-      //     const randomMilisec = Math.round(Math.random() * 500)
-      //     return setInterval(
-      //       moveWolf,
-      //       WOLF_MOVE_MIN_MILISEC + randomMilisec,
-      //       wolf
-      //     )
-      //   })
-      // }
+        const rabbitLocList = getIndexOfCurrentCharacter(gameArray, RABBIT_ID)
+        const rabbitCoord = rabbitLocList[1]
+
+        if (gameState.isGameRunning === false) {
+          return
+        }
+
+        const steps = findWolvesSteps(gameState, wolf)
+        if (steps.length === 0) {
+          gameState.isGameRunning = false
+          youLost(gameState)
+        } else {
+          const distances = steps.map((step) =>
+            calculateDistance(rabbitCoord, step)
+          )
+          const index = distances.indexOf(Math.min(...distances))
+          const nearPoint = steps[index]
+          gameArray[nearPoint[X]][nearPoint[Y]] = WOLF_ID
+          gameArray[wolf[X]][wolf[Y]] = FREE_ID
+          createPlayGround(gameState)
+        }
+      }
+
+      function setIntervalToEachWolf(gameState, boardSize) {
+        const wolfCount = (boardSize / 100) * 60
+        console.log(wolfCount)
+        for (let i = 1; i <= wolfCount; i++) {
+          const randomMilisec = Math.round(Math.random() * 500)
+          const interval = setInterval(
+            moveWolfByRandomInterval,
+            WOLF_MOVE_MIN_MILISEC + randomMilisec,
+            gameState,
+            i
+          )
+          console.log(interval)
+          gameState.timers.push(interval)
+        }
+        console.log(gameState.timers)
+      }
 
       function onClickStartButton(gameBoardNum) {
         const select = getBoardDivElement(gameBoardNum, "size")
-        const sizeValue = select.value
-        setSizeOfGameGrid(sizeValue, gameBoardNum)
-        const primaryArray = drawPrimaryArray(sizeValue)
-        const newGameArray = setAllPlayersLocation(primaryArray, sizeValue)
+        const boardSize = select.value
+        setSizeOfGameGrid(boardSize, gameBoardNum)
+        const primaryArray = createMultidimensionalArray(boardSize)
+        const newGameArray = setAllPlayersLocation(primaryArray, boardSize)
 
         const gameState = {
           gameArray: newGameArray,
           isGameRunning: true,
           gameBoardNum,
+          timers: [],
         }
         GAME_STATES[gameBoardNum] = gameState
+        console.log(GAME_STATES)
         createPlayGround(gameState)
         createMovementButtons(gameState.gameBoardNum)
         callMovmentButtonsEvents(gameState)
-        // moveWolvesByRandomInterval(gameState)
+        setIntervalToEachWolf(gameState, boardSize)
       }
 
       createNewGameButton()
