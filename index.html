@@ -42,6 +42,7 @@
         btn.addEventListener("click", function () {
           createGameBody(Object.keys(GAME_STATES).length)
           addStartButtonEvent(gameBoardNum)
+          addStartOverBtnEvent(gameBoardNum)
           gameBoardNum += 1
         })
       }
@@ -62,7 +63,7 @@
           <div class="gameOverWindow" id="gameOverWindow_${gameBoardNum}">
             <div class="alert">
               <p id="message" class="message"></p><br/>
-              <button class="startAgain">START AGAIN</button>
+              <button class="startOver">START OVER</button>
             </div>
           </div>`
         container.insertAdjacentHTML("beforeend", perGameBody)
@@ -75,10 +76,25 @@
         return element
       }
 
+      function addStartOverBtnEvent(gameBoardNum) {
+        const startOverBtn = getGameOverWindowElement(gameBoardNum, "startOver")
+        startOverBtn.addEventListener("click", function () {
+          startGameByNumber(gameBoardNum)
+
+          const gameWindow = document.getElementById(
+            `gameOverWindow_${gameBoardNum}`
+          )
+          const body = document.getElementById(`body_${gameBoardNum}`)
+
+          gameWindow.style.display = "none"
+          body.style.display = "block"
+        })
+      }
+
       function addStartButtonEvent(gameBoardNum) {
         const btn = getBoardDivElement(gameBoardNum, "start")
         btn.addEventListener("click", function () {
-          onClickStartButton(gameBoardNum)
+          startGameByNumber(gameBoardNum)
         })
       }
 
@@ -97,24 +113,17 @@
 
       function drawGameOverBlock(gameState, image, message) {
         const gameBoardNum = gameState.gameBoardNum
-        const window = document.getElementById(`gameOverWindow_${gameBoardNum}`)
-        window.style.display = "block"
+        const gameWindow = document.getElementById(
+          `gameOverWindow_${gameBoardNum}`
+        )
+        gameWindow.style.display = "block"
         const alert = getGameOverWindowElement(gameBoardNum, "alert")
         alert.style.backgroundImage = image
         const mess = getGameOverWindowElement(gameBoardNum, "message")
         mess.innerHTML = message
+
         const body = document.getElementById(`body_${gameBoardNum}`)
         body.style.display = "none"
-        const startAgainBtn = getGameOverWindowElement(
-          gameBoardNum,
-          "startAgain"
-        )
-        startAgainBtn.addEventListener("click", function () {
-          gameState.timers.forEach(clearInterval)
-          onClickStartButton(gameBoardNum)
-          window.style.display = "none"
-          body.style.display = "block"
-        })
         setgameStatusAlertStyle(gameBoardNum)
       }
 
@@ -220,18 +229,16 @@
         })
       }
 
-      function getIndexOfCurrentCharacter(gameArray, characterId) {
-        let i = 1
+      function getCorrdsOf(gameArray, characterId) {
         const findInArray = function (accumulator, row, x) {
           row.forEach((element, y) => {
             if (element === characterId) {
-              accumulator[i] = [x, y]
-              i++
+              accumulator.push([x, y])
             }
           })
           return accumulator
         }
-        return gameArray.reduce(findInArray, {})
+        return gameArray.reduce(findInArray, [])
       }
 
       function youLost(gameState) {
@@ -254,20 +261,19 @@
           return
         }
         const gameArray = gameState.gameArray
-        const rabbitLocations = getIndexOfCurrentCharacter(gameArray, RABBIT_ID)
-        const [rabbitLocX, rabbitLocY] = rabbitLocations[1]
+        const [rabbitX, rabbitY] = getCorrdsOf(gameArray, RABBIT_ID).shift()
         const [directionX, directionY] = directionVal
         const maxStep = gameArray.length
 
-        let [x, y] = [rabbitLocX + directionX, rabbitLocY + directionY]
+        let [x, y] = [rabbitX + directionX, rabbitY + directionY]
         x = (x + maxStep) % maxStep
         y = (y + maxStep) % maxStep
 
         if (gameArray[x][y] === FREE_ID) {
-          gameArray[rabbitLocX][rabbitLocY] = FREE_ID
+          gameArray[rabbitX][rabbitY] = FREE_ID
           gameArray[x][y] = RABBIT_ID
         } else if (gameArray[x][y] === HOUSE_ID) {
-          gameArray[rabbitLocX][rabbitLocY] = FREE_ID
+          gameArray[rabbitX][rabbitY] = FREE_ID
           gameState.isGameRunning = false
           youWon(gameState)
         }
@@ -295,7 +301,7 @@
         addMovmentButtonEvent(gameState, "down", "Down")
       }
 
-      function calculateDistance(location1, location2) {
+      const calculateDistance = (location1) => (location2) => {
         if (location1 !== undefined && location1 !== undefined) {
           return Math.sqrt(
             Math.pow(location1[X] - location2[X], 2) +
@@ -321,24 +327,26 @@
         const isInRange = ([x, y]) =>
           x >= 0 && x < gameArray.length && y >= 0 && y < gameArray.length
         const steps = allNeighbourDirections.filter(isInRange)
-        const findRebbitNearWolf = steps.filter(
+
+        const rabbitNearCoord = steps.find(
           (step) => gameArray[step[X]][step[Y]] === RABBIT_ID
         )
-        if (findRebbitNearWolf.length !== 0) {
-          return []
+
+        if (rabbitNearCoord) {
+          return [rabbitNearCoord]
         } else {
+          // any Free Cell
           return steps.filter((step) => gameArray[step[X]][step[Y]] === FREE_ID)
         }
       }
 
-      function moveWolfByRandomInterval(gameState, wolfNum) {
+      function moveWolf(gameState, wolfIndex) {
         const gameArray = gameState.gameArray
-        const wolfLocList = getIndexOfCurrentCharacter(gameArray, WOLF_ID)
-        console.log(wolfLocList)
-        const wolf = wolfLocList[wolfNum]
+        const wolfCoordList = getCorrdsOf(gameArray, WOLF_ID)
+        console.log(wolfCoordList)
+        const wolf = wolfCoordList[wolfIndex]
 
-        const rabbitLocList = getIndexOfCurrentCharacter(gameArray, RABBIT_ID)
-        const rabbitCoord = rabbitLocList[1]
+        const rabbitCoord = getCorrdsOf(gameArray, RABBIT_ID).shift()
 
         if (gameState.isGameRunning === false) {
           return
@@ -346,14 +354,22 @@
 
         const steps = findWolvesSteps(gameState, wolf)
         if (steps.length === 0) {
+          return
+        }
+
+        let nearPoint
+        if (steps.length === 1) {
+          nearPoint = steps[0]
+        } else {
+          const distances = steps.map(calculateDistance(rabbitCoord))
+          const index = distances.indexOf(Math.min(...distances))
+          nearPoint = steps[index]
+        }
+
+        if (gameArray[nearPoint[X]][nearPoint[Y]] === RABBIT_ID) {
           gameState.isGameRunning = false
           youLost(gameState)
         } else {
-          const distances = steps.map((step) =>
-            calculateDistance(rabbitCoord, step)
-          )
-          const index = distances.indexOf(Math.min(...distances))
-          const nearPoint = steps[index]
           gameArray[nearPoint[X]][nearPoint[Y]] = WOLF_ID
           gameArray[wolf[X]][wolf[Y]] = FREE_ID
           createPlayGround(gameState)
@@ -363,10 +379,10 @@
       function setIntervalToEachWolf(gameState, boardSize) {
         const wolfCount = (boardSize / 100) * 60
         console.log(wolfCount)
-        for (let i = 1; i <= wolfCount; i++) {
+        for (let i = 0; i < wolfCount; i++) {
           const randomMilisec = Math.round(Math.random() * 500)
           const interval = setInterval(
-            moveWolfByRandomInterval,
+            moveWolf,
             WOLF_MOVE_MIN_MILISEC + randomMilisec,
             gameState,
             i
@@ -377,7 +393,13 @@
         console.log(gameState.timers)
       }
 
-      function onClickStartButton(gameBoardNum) {
+      function startGameByNumber(gameBoardNum) {
+        console.log("startGameByNumber: AAAAAAAAAA")
+        if (GAME_STATES[gameBoardNum]) {
+          const oldGame = GAME_STATES[gameBoardNum]
+          oldGame.timers.forEach(clearInterval)
+        }
+
         const select = getBoardDivElement(gameBoardNum, "size")
         const boardSize = select.value
         setSizeOfGameGrid(boardSize, gameBoardNum)
