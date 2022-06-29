@@ -1,0 +1,2 @@
+# RabbitWolfGame
+The rules of the game -> In the start we have NEW GAME button, which onClick shows buttons Start and Size Select. Choosing the size click on button start, than it shows the game board and  buttons to move Rabbit. You have to help Rabbit to get home without meeting Wolfs. Wolfs moving with random time intervals to the Rabbit. If The Rabbit gets home, you win, if any Wolf gets the Rabbit, you loose. Every time you click the NEW GAME button, its running new game board without deleting the old one․
